@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STTL2 – Play Any Game</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --navy:#0A2A5E; --navy2:#06183A; --accent:#0A2A5E; --accent2:#123B82;
+  --ball:#FFD700;
+  --bg:#f5f7fa; --card:#ffffff; --text:#16233a; --muted:#5c6b83; --line:#e3e8f0;
+  --ok:#1e8e5a; --warn:#b8860b;
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;overflow-x:hidden;width:100%;}
+body{background:var(--bg) radial-gradient(circle at 20% 0%,#ffffff 0,transparent 60%);color:var(--text);-webkit-tap-highlight-color:transparent;}
+header{background:linear-gradient(120deg,var(--navy),var(--navy2));
+  color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  border-bottom:4px solid #fff;box-shadow:0 2px 0 var(--ball)}
+header .brand{display:flex;flex-direction:column;min-width:0}
+header .brand b{font-size:19px}
+header .brand b .ball{display:inline-block;animation:bounce 1.4s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+header .brand small{color:#cfe0f5;opacity:.85;font-size:12px}
+header .who{font-size:12px;color:#cfe0f5;text-align:right}
+nav{display:flex;flex-wrap:wrap;gap:4px;background:#fff;border-bottom:1px solid var(--line);padding:6px 10px;width:100%}
+nav button{background:none;border:none;padding:11px 14px;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;border-radius:6px;min-height:44px;transition:background .15s,color .15s}
+nav button.active{color:var(--navy);border-bottom-color:var(--accent);font-weight:600}
+nav button:hover:not(:disabled){background:#f1f5fb;color:var(--navy)}
+nav button:disabled{opacity:.4;cursor:not-allowed}
+main{max-width:960px;margin:0 auto;padding:16px;width:100%}
+.card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--ball);border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(20,30,50,.05);max-width:100%}
+h2{margin-top:0;color:var(--navy);font-size:18px}
+h3{color:var(--navy);font-size:15px;margin:14px 0 6px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+label.inline{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:14px;color:var(--text)}
+label.inline input{width:auto}
+input,select,textarea{width:100%;padding:11px 10px;border:1px solid var(--line);border-radius:6px;font-size:16px;background:#fff;font-family:inherit}
+input[type=checkbox],input[type=radio]{width:auto}
+button.btn{background:var(--accent);color:#fff;border:none;padding:12px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;min-height:44px;transition:background .15s,transform .05s;}
+button.btn:hover{background:var(--accent2)}
+button.btn:active{transform:scale(.98)}
+button.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy)}
+button.btn.ghost:hover{background:var(--navy);color:#fff}
+button.btn.danger{background:#fff;color:var(--warn);border:1px solid var(--warn)}
+button.btn.danger:hover{background:var(--warn);color:#fff}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+a.btn{display:inline-block;background:#25D366;color:#fff;border:none;padding:12px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;min-height:44px;line-height:20px;transition:background .15s;text-decoration:none;text-align:center}
+a.btn:hover{background:#1ebe5a}
+.help-fab{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#25D366;color:#fff;font-size:18px;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:background .15s,transform .1s}
+.help-fab:hover{background:#1ebe5a;transform:scale(1.08)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:160px}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+.badge.ok{background:#e3f6ec;color:var(--ok)}
+.badge.warn{background:#fdecec;color:var(--warn)}
+.badge.muted{background:#eef1f5;color:var(--muted)}
+.muted{color:var(--muted);font-size:13px}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+.player-item{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.player-item-head{margin-bottom:4px;font-size:14px}
+.player-item-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted);margin-top:3px}
+.player-item .row{gap:6px;margin-top:6px}
+.player-item .row>*{flex:0 0 auto;min-width:0}
+.collapsible-header{cursor:pointer;user-select:none;margin-bottom:0}
+.collapsible-header:hover{color:var(--accent2)}
+.collapsible-body{margin-top:12px}
+.admin-card{padding:12px 14px}
+.admin-card button.btn{padding:6px 12px;min-height:34px;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:420px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+tr:hover td{background:#f7f9fc}
+.overlay{position:fixed;inset:0;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:14px}
+.modal{background:#fff;border-radius:10px;padding:22px;max-width:440px;width:100%;max-height:85vh;overflow-y:auto}
+.error{color:var(--warn);font-size:13px;margin-top:6px}
+.tag{display:inline-block;background:#eef2f8;color:var(--navy);padding:3px 8px;border-radius:6px;font-size:12px;margin-right:4px}
+.hidden{display:none !important}
+footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px;opacity:.9}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-box{display:flex;align-items:center;justify-content:center;gap:12px;padding:34px;color:var(--muted)}
+.paddle-loader{font-size:28px;display:inline-block;animation:swing .8s ease-in-out infinite;transform-origin:70% 90%}
+@keyframes swing{0%,100%{transform:rotate(-25deg)}50%{transform:rotate(25deg)}}
+a.link{color:var(--navy);cursor:pointer;text-decoration:underline;font-size:13px}
+a.link:hover{color:var(--accent)}
+/* game chips */
+.gamebar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--navy);background:#fff;color:var(--navy);border-radius:999px;padding:8px 13px;font-size:14px;cursor:pointer;min-height:40px;transition:background .15s,color .15s}
+.chip:hover{background:#eef3fb}
+.chip.active{background:var(--navy);color:#fff;font-weight:600}
+.chip.soft{border-style:dashed;color:var(--muted);border-color:var(--line)}
+.gamebar select{width:auto;min-width:150px;padding:8px 10px;font-size:14px;border-radius:999px;border:1px solid var(--navy);color:var(--navy);background:#fff}
+.gamebar-label{font-size:12px;color:var(--muted);margin:8px 0 4px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.stat-grid .card{margin:0;padding:12px}
+.stat-grid .v{font-size:24px;font-weight:700}
+.picker-q{margin-bottom:4px;font-size:14px;padding:8px 10px}
+details.sport{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fff}
+details.sport>summary{cursor:pointer;padding:10px 12px;font-weight:600;color:var(--navy);list-style:none}
+details.sport>summary::-webkit-details-marker{display:none}
+details.sport>summary:before{content:'▸ ';}
+details.sport[open]>summary:before{content:'▾ ';}
+details.sport .inner{padding:0 12px 12px}
+.checklist{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+@media (max-width:600px){
+  header{padding:10px 12px}
+  main{padding:10px}
+  .card{padding:14px}
+  nav button{padding:10px 10px;font-size:13px}
+  .row>*{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><b>🌍 <span class="ball">🏆</span> STTL2 — Play Any Game</b><small>Pick a game. Challenge. Climb the ranks.</small></div>
+  <div id="whoBar" class="who"></div>
+  <a class="help-fab" href="https://wa.me/qr/NW3OPXQ4I5JYB1" target="_blank" rel="noopener" title="Questions? Chat with technical support on WhatsApp" aria-label="Technical support on WhatsApp">💬</a>
+</header>
+
+<nav id="nav" class="hidden">
+  <button data-tab="dashboard" class="navbtn">Dashboard</button>
+  <button data-tab="play" class="navbtn">Play</button>
+  <button data-tab="history" class="navbtn">My Sports</button>
+  <button data-tab="profile" class="navbtn">Profile</button>
+  <button data-tab="info" class="navbtn">Info</button>
+  <button data-tab="admin" id="adminNavBtn" class="navbtn hidden">Admin</button>
+  <button id="logoutBtn" class="navbtn" style="margin-left:auto">Logout</button>
+</nav>
+
+<main id="app"></main>
+<div id="modalRoot"></div>
+<footer>STTL2 · Play any game, anywhere</footer>
+
+<script>
+const SUPABASE_URL = "https://gdvbplbqehrtrgiwwcja.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkdmJwbGJxZWhydHJnaXd3Y2phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMzExOTEsImV4cCI6MjEwNTgwNzE5MX0.w61-EWRvERE2QzXTKMifXp63Pqq5BFgMDKx99k3LPkY";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// A second, throw-away client used only when an admin adds a player: it
+// calls auth.signUp() for somebody else without logging the admin out.
+let _sbAdmin=null;
+function getSbAdmin(){
+  if(!_sbAdmin){
+    _sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth:{persistSession:false, autoRefreshToken:false, storageKey:'sb-sttl2-admin-ephemeral-auth'}
+    });
+  }
+  return _sbAdmin;
+}
+
+const WHATSAPP_URL = 'https://wa.me/qr/NW3OPXQ4I5JYB1';
+const COUNTRIES = ("Afghanistan,Albania,Algeria,Andorra,Angola,Antigua and Barbuda,Argentina,Armenia,Australia,Austria,Azerbaijan,Bahamas,Bahrain,Bangladesh,Barbados,Belarus,Belgium,Belize,Benin,Bhutan,Bolivia,Bosnia and Herzegovina,Botswana,Brazil,Brunei,Bulgaria,Burkina Faso,Burundi,Cabo Verde,Cambodia,Cameroon,Canada,Central African Republic,Chad,Chile,China,Colombia,Comoros,Congo (DRC),Congo (Republic),Costa Rica,Côte d'Ivoire,Croatia,Cuba,Cyprus,Czechia,Denmark,Djibouti,Dominica,Dominican Republic,Ecuador,Egypt,El Salvador,Equatorial Guinea,Eritrea,Estonia,Eswatini,Ethiopia,Fiji,Finland,France,Gabon,Gambia,Georgia,Germany,Ghana,Greece,Grenada,Guatemala,Guinea,Guinea-Bissau,Guyana,Haiti,Honduras,Hong Kong,Hungary,Iceland,India,Indonesia,Iran,Iraq,Ireland,Israel,Italy,Jamaica,Japan,Jordan,Kazakhstan,Kenya,Kiribati,Kosovo,Kuwait,Kyrgyzstan,Laos,Latvia,Lebanon,Lesotho,Liberia,Libya,Liechtenstein,Lithuania,Luxembourg,Macau,Madagascar,Malawi,Malaysia,Maldives,Mali,Malta,Marshall Islands,Mauritania,Mauritius,Mexico,Micronesia,Moldova,Monaco,Mongolia,Montenegro,Morocco,Mozambique,Myanmar,Namibia,Nauru,Nepal,Netherlands,New Zealand,Nicaragua,Niger,Nigeria,North Korea,North Macedonia,Norway,Oman,Pakistan,Palau,Palestine,Panama,Papua New Guinea,Paraguay,Peru,Philippines,Poland,Portugal,Puerto Rico,Qatar,Romania,Russia,Rwanda,Saint Kitts and Nevis,Saint Lucia,Saint Vincent and the Grenadines,Samoa,San Marino,Sao Tome and Principe,Saudi Arabia,Senegal,Serbia,Seychelles,Sierra Leone,Singapore,Slovakia,Slovenia,Solomon Islands,Somalia,South Africa,South Korea,South Sudan,Spain,Sri Lanka,Sudan,Suriname,Sweden,Switzerland,Syria,Taiwan,Tajikistan,Tanzania,Thailand,Timor-Leste,Togo,Tonga,Trinidad and Tobago,Tunisia,Türkiye,Turkmenistan,Tuvalu,Uganda,Ukraine,United Arab Emirates,United Kingdom,United States,Uruguay,Uzbekistan,Vanuatu,Vatican City,Venezuela,Vietnam,Yemen,Zambia,Zimbabwe").split(',');
+
+// ---- global state ----
+let session=null, me=null, activeTab='dashboard';
+let allPlayers=[], players=[];          // allPlayers includes me; players excludes me
+let games=[], topGames=[], myGames=[];  // all active games; top 5 by matches; my per-game rows
+let cfg={free_limit_enabled:false, free_match_limit:10};
+let myMatchCount=0;                     // matches I'm in (not declined) — for the optional free limit
+let selectedGameId=null;
+let scope='global';                     // 'global' | 'mine' | 'c:<country>'
+let dashboardShowAll=false, mostPlayedView='this';
+try{ selectedGameId = localStorage.getItem('sttl2_game') || null; }catch(e){}
+
+const app=document.getElementById('app');
+const modalRoot=document.getElementById('modalRoot');
+const nav=document.getElementById('nav');
+
+function setLoading(btn,on,label){
+  if(!btn) return;
+  if(on){
+    if(btn.dataset.orig===undefined) btn.dataset.orig=btn.innerHTML;
+    btn.disabled=true;
+    btn.innerHTML='<span class="spinner"></span>'+(label||'Processing...');
+  }else{
+    btn.disabled=false;
+    if(btn.dataset.orig!==undefined){ btn.innerHTML=btn.dataset.orig; delete btn.dataset.orig; }
+  }
+}
+function showLoading(msg){
+  app.innerHTML='<div class="card"><div class="loading-box"><span class="paddle-loader">🎮</span><span>'+(msg||'Loading…')+'</span></div></div>';
+}
+function pwOk(p){return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(p);}
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function daysSince(d){ if(!d) return 9999; return Math.floor((Date.now()-new Date(d).getTime())/86400000);}
+function fmtDate(d){return d? new Date(d).toLocaleDateString():'-';}
+function fmtDateTime(d){return d? new Date(d).toLocaleString():'Never';}
+function fmtPlayed(d){return d? new Date(d).toLocaleString():'—';}
+function localInputValue(dt){
+  const x=new Date(dt.getTime()-dt.getTimezoneOffset()*60000);
+  return x.toISOString().slice(0,16);
+}
+async function validateName(name, email, excludeId){
+  const n=(name||'').trim(), e=(email||'').trim().toLowerCase();
+  if(!n) return 'Please enter a name.';
+  if(n.length<2||n.length>40) return 'Your display name must be 2 to 40 characters.';
+  if(/[<>]/.test(n)) return 'A display name cannot contain < or >.';
+  if(n.toLowerCase()===e) return 'Name cannot be the same as the email address — other players only see the name, so it needs to be a real display name.';
+  const {data} = await sb.from('sttl2_players').select('id').ilike('name', n.replace(/[%_]/g,m=>'\\'+m));
+  const clash = (data||[]).find(r=>r.id!==excludeId);
+  if(clash) return 'That name is already taken by another player — please choose a different display name.';
+  return null;
+}
+// mode 'challenge' = a future/near-future arrangement; 'played' = already played.
+function validatePlayWhenVenue(whenVal, venue, mode){
+  if(!whenVal) return mode==='played' ? 'Please enter the date and time the match was played.' : 'Please choose the date and time you want to play.';
+  const t=new Date(whenVal).getTime();
+  if(isNaN(t)) return 'That date and time is not valid.';
+  if(!venue) return 'Please type the venue (any place name is fine).';
+  if(mode==='played' && t > Date.now()+10*60*1000) return 'A match that has already been played cannot have a date in the future.';
+  if(mode==='challenge' && t < Date.now()-60*60*1000) return 'The date and time cannot be more than an hour in the past.';
+  return '';
+}
+function canPlay(p){ return !!p && p.is_approved !== false; }
+
+function modal(html){ modalRoot.innerHTML = `<div class="overlay"><div class="modal">${html}</div></div>`; }
+function closeModal(){ modalRoot.innerHTML=''; }
+function countryOptions(selected, placeholder){
+  return `<option value="">${placeholder||'Select your country…'}</option>` + COUNTRIES.map(c=>`<option value="${esc(c)}" ${c===selected?'selected':''}>${esc(c)}</option>`).join('');
+}
+
+// ---------- ratings, levels, avatars ----------
+function winPct(wins, losses){
+  const total = (wins||0) + (losses||0);
+  return total ? Math.round((wins/total)*100) + '%' : '—';
+}
+function ratingLevel(r){
+  if(r>=2700) return 'Pro';
+  if(r>=2200) return 'Elite';
+  if(r>=1700) return 'Advanced';
+  if(r>=1200) return 'Intermediate';
+  return 'Beginner';
+}
+const DUMMY_AVATAR = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="120" viewBox="0 0 100 120">'
+  + '<rect width="100" height="120" fill="#d5e6dc"/>'
+  + '<circle cx="50" cy="42" r="20" fill="#9fb3a8"/>'
+  + '<ellipse cx="50" cy="104" rx="36" ry="28" fill="#9fb3a8"/>'
+  + '</svg>'
+);
+function avatarHtml(p, size){
+  size = size||26;
+  const h = Math.round(size*1.2);
+  const url = (p && p.photo_url) || DUMMY_AVATAR;
+  return `<img src="${esc(url)}" alt="" onclick="event.stopPropagation();showPhotoModal(this.src)" style="width:${size}px;height:${h}px;border-radius:5px;object-fit:cover;vertical-align:middle;margin-right:6px;cursor:pointer;border:1px solid var(--line)">`;
+}
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onerror = ()=>reject(new Error('Could not read the file.'));
+    reader.onload = ()=>{
+      img.onerror = ()=>reject(new Error('Could not read the image.'));
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w >= h){ h = Math.round(h * (maxDim/w)); w = maxDim; }
+          else { w = Math.round(w * (maxDim/h)); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob=>{
+          if(!blob){ reject(new Error('Could not compress the image.')); return; }
+          resolve(blob);
+        }, 'image/jpeg', quality);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+window.showPhotoModal = (url)=>{
+  modal(`<div style="text-align:center"><img src="${esc(url)}" alt="" style="max-width:100%;max-height:70vh;border-radius:8px;border:1px solid var(--line)"></div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost" onclick="closeModal()">Close</button></div>`);
+};
+
+// Pages through a query so lists longer than the server's 1000-row cap load completely.
+async function fetchAllRows(build){
+  const out=[]; const size=1000;
+  for(let from=0;;from+=size){
+    const {data,error}=await build(from,from+size-1);
+    if(error||!data) break;
+    out.push(...data);
+    if(data.length<size) break;
+  }
+  return out;
+}
+const pick1 = x => Array.isArray(x) ? x[0] : x;   // embedded one-to-one rows may come back as object or array
+
+// ---------- DATA HELPERS ----------
+const byName = (a,b)=>String(a.name).localeCompare(String(b.name));
+function gameById(id){ return games.find(g=>g.id===id); }
+function curGame(){ return gameById(selectedGameId) || null; }
+function setSelectedGame(id){ selectedGameId=id; try{ localStorage.setItem('sttl2_game',id); }catch(e){} }
+async function loadGames(){
+  const {data} = await sb.from('sttl2_games').select('*').eq('is_active',true).order('name');
+  games = (data||[]).sort(byName);
+  const r = await sb.rpc('sttl2_top_games',{p_limit:5});
+  if(!r.error && r.data) topGames = r.data.map(t=>gameById(t.game_id)).filter(Boolean);
+  else topGames = [...games].sort((a,b)=>(a.seed_rank-b.seed_rank)||byName(a,b)).slice(0,5);
+  if(!gameById(selectedGameId)) setSelectedGame((topGames[0]||games[0]||{}).id || null);
+}
+async function loadMyGames(){
+  if(!me){ myGames=[]; return; }
+  const {data} = await sb.from('sttl2_player_games').select('*').eq('player_id',me.id);
+  myGames = data||[];
+}
+async function loadConfig(){
+  const {data} = await sb.from('sttl2_app_config').select('*').eq('id',1).maybeSingle();
+  if(data) cfg = data;
+}
+async function loadMyMatchCount(){
+  if(!me){ myMatchCount=0; return; }
+  const r = await sb.from('sttl2_challenges').select('id',{count:'exact',head:true}).neq('status','declined')
+    .or(`challenger_id.eq.${me.id},opponent_id.eq.${me.id},challenger_partner_id.eq.${me.id},opponent_partner_id.eq.${me.id}`);
+  myMatchCount = r.count || 0;
+}
+async function refreshPlayers(){
+  const rows = await fetchAllRows((a,b)=>sb.from('sttl2_players').select('id,name,country,city,photo_url,is_approved,is_subscribed,is_admin,last_played_on').order('name').order('id').range(a,b));
+  allPlayers = rows;
+  players = rows.filter(p=>p.is_approved && (!me || p.id!==me.id));
+}
+function nameOf(id){ const p = allPlayers.find(x=>x.id===id) || (me && id===me.id ? me : null); return p ? esc(p.name) : (id ? String(id).slice(0,6) : '—'); }
+function freeLimitInfo(){
+  if(!cfg.free_limit_enabled || !me || me.is_subscribed || me.is_admin) return null;
+  return {used:myMatchCount, limit:cfg.free_match_limit, left:Math.max(0,cfg.free_match_limit-myMatchCount)};
+}
+function updateWhoBar(){
+  if(!me) return;
+  const f=freeLimitInfo();
+  document.getElementById('whoBar').innerHTML = `<div>${esc(me.name)} · ${esc(me.country||'')}</div>` +
+    (f ? `<div style="font-size:11px;opacity:.85">Free matches: ${f.used} of ${f.limit} used</div>` : '');
+}
+
+// ---------- GAME PICKER (top 5 + my games + all games) ----------
+function gameBarHtml(opts){
+  opts = opts||{};
+  const cur = selectedGameId;
+  const chip = g => `<button type="button" class="chip ${g.id===cur?'active':''}" data-game="${g.id}">${esc(g.emoji)} ${esc(g.name)}</button>`;
+  const topIds = new Set(topGames.map(g=>g.id));
+  const mine = myGames.map(mg=>gameById(mg.game_id)).filter(g=>g && !topIds.has(g.id)).sort(byName);
+  const curG = gameById(cur);
+  const curExtra = curG && !topIds.has(curG.id) && !mine.includes(curG) ? [curG] : [];
+  return `<div class="gamebar-label">🔥 Top 5 games</div>
+    <div class="gamebar">${topGames.map(chip).join('') || '<span class="muted">No games yet.</span>'}</div>
+    ${(mine.length||curExtra.length) ? `<div class="gamebar-label">⭐ My other games</div><div class="gamebar">${[...mine,...curExtra].map(chip).join('')}</div>` : ''}
+    <div class="gamebar" style="margin-top:8px">
+      <select id="gb_more" aria-label="All games"><option value="">All games (A–Z) ▾</option>${[...games].sort(byName).map(g=>`<option value="${g.id}" ${g.id===cur?'selected':''}>${esc(g.emoji)} ${esc(g.name)}</option>`).join('')}</select>
+      ${opts.allowAdd===false ? '' : '<button type="button" class="chip soft" id="gb_add">➕ Add a game</button>'}
+    </div>`;
+}
+function wireGameBar(onChange){
+  app.querySelectorAll('.chip[data-game]').forEach(b=>{
+    b.onclick = ()=>{ setSelectedGame(b.dataset.game); onChange(); };
+  });
+  const more=document.getElementById('gb_more');
+  if(more) more.onchange = e=>{ if(e.target.value){ setSelectedGame(e.target.value); onChange(); } };
+  const add=document.getElementById('gb_add');
+  if(add) add.onclick = ()=>openAddGame(onChange);
+}
+async function createGame(name, emoji, supportsDoubles, uid){
+  const nm = String(name||'').trim().replace(/\s+/g,' ');
+  if(nm.length<2 || nm.length>40) return {error:'A game name must be 2 to 40 characters.'};
+  if(/[<>]/.test(nm)) return {error:'A game name cannot contain < or >.'};
+  const ex = games.find(g=>g.name.toLowerCase()===nm.toLowerCase());
+  if(ex) return {game:ex, existing:true};
+  const {data,error} = await sb.from('sttl2_games').insert({name:nm, emoji:(emoji||'').trim()||'🎮', supports_doubles:supportsDoubles!==false, created_by:uid}).select().single();
+  if(error){
+    if(/duplicate|unique/i.test(error.message)){ await loadGames(); const g=games.find(x=>x.name.toLowerCase()===nm.toLowerCase()); if(g) return {game:g, existing:true}; }
+    return {error:error.message};
+  }
+  games.push(data); games.sort(byName);
+  return {game:data};
+}
+function openAddGame(after){
+  modal(`<h2>➕ Add a game</h2>
+    <p class="muted">Any game works — board games, sports, video games. Everyone on STTL2 will be able to pick it. If it already exists you'll just be switched to it.</p>
+    <label>Game name</label><input id="ag_name" maxlength="40" placeholder="e.g. Kabaddi">
+    <label>Emoji (optional)</label><input id="ag_emoji" maxlength="4" placeholder="🎮">
+    <label class="inline"><input type="checkbox" id="ag_dbl" checked> Can be played as doubles (2 vs 2)</label>
+    <div class="error" id="ag_err"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="ag_go">Add game</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+  document.getElementById('ag_go').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('ag_err');
+    setLoading(btn,true,'Adding...');
+    const r = await createGame(document.getElementById('ag_name').value, document.getElementById('ag_emoji').value, document.getElementById('ag_dbl').checked, me.id);
+    if(r.error){ setLoading(btn,false); err.textContent=r.error; return; }
+    // also mark it as one of my games
+    await sb.from('sttl2_player_games').upsert({player_id:me.id, game_id:r.game.id},{onConflict:'player_id,game_id',ignoreDuplicates:true});
+    await loadGames(); await loadMyGames();
+    setSelectedGame(r.game.id);
+    closeModal(); after();
+  };
+}
+
+// ---------- AUTH VIEWS ----------
+function renderLogin(){
+  nav.classList.add('hidden');
+  document.getElementById('whoBar').innerHTML='';
+  app.innerHTML = `
+  <div class="card" style="max-width:420px;margin:30px auto">
+    <h2>Login</h2>
+    <label>Email</label><input id="li_email" type="email" autocomplete="username">
+    <label>Password</label><input id="li_pw" type="password" autocomplete="current-password">
+    <div class="error" id="li_err"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="li_go">Login</button>
+      <button class="btn ghost" id="li_signup">Create account</button>
+    </div>
+    <p><a class="link" id="li_forgot">Forgot password?</a></p>
+    <button class="btn ghost" id="li_guest" style="width:100%;margin-top:10px">View Dashboard as Guest</button>
+  </div>`;
+  const go = async ()=>{
+    const btn=document.getElementById('li_go');
+    const email=document.getElementById('li_email').value.trim();
+    const password=document.getElementById('li_pw').value;
+    setLoading(btn,true,'Logging in...');
+    const {data,error} = await sb.auth.signInWithPassword({email,password});
+    if(error){ setLoading(btn,false); document.getElementById('li_err').textContent = error.message; return; }
+    session = data.session; await loadMeAndBoot();
+  };
+  document.getElementById('li_go').onclick = go;
+  document.getElementById('li_pw').onkeydown = e=>{ if(e.key==='Enter') go(); };
+  document.getElementById('li_signup').onclick = renderSignup;
+  document.getElementById('li_forgot').onclick = renderForgot;
+  document.getElementById('li_guest').onclick = renderGuestDashboard;
+}
+
+function gameChecklistHtml(idPrefix, selectedIds){
+  const top = new Set(topGames.map(g=>g.id));
+  const ordered = [...topGames, ...games.filter(g=>!top.has(g.id)).sort(byName)];
+  return `<div class="checklist" id="${idPrefix}">${ordered.map(g=>`
+    <label class="inline"><input type="checkbox" value="${g.id}" ${selectedIds&&selectedIds.has(g.id)?'checked':''}> ${esc(g.emoji)} ${esc(g.name)}${top.has(g.id)?' <span class="tag">top 5</span>':''}</label>`).join('')}</div>`;
+}
+function checkedIds(idPrefix){
+  return [...document.querySelectorAll('#'+idPrefix+' input[type=checkbox]:checked')].map(i=>i.value);
+}
+
+async function renderSignup(){
+  if(games.length===0) await loadGames();
+  app.innerHTML = `
+  <div class="card" style="max-width:480px;margin:30px auto">
+    <h2>Create account</h2>
+    <label>Display name</label><input id="su_name" maxlength="40">
+    <label>Email</label><input id="su_email" type="email" autocomplete="username">
+    <label>Password</label><input id="su_pw" type="password" autocomplete="new-password">
+    <div class="muted">Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.</div>
+    <label>Age</label><input id="su_age" type="number" min="5" max="110">
+    <label>Country (required)</label>
+    <select id="su_country">${countryOptions('', 'Select your country…')}</select>
+    <label>City / club (optional)</label><input id="su_city" maxlength="60" placeholder="e.g. Bishan, or the name of your club">
+    <label>Which games do you play? (pick any — you can change this later)</label>
+    ${gameChecklistHtml('su_games')}
+    <label>Not in the list? Add your game</label>
+    <input id="su_newgame" maxlength="40" placeholder="Type a game name (optional)">
+    <div class="error" id="su_err"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="su_go">Register</button>
+      <button class="btn ghost" id="su_back">Back to login</button>
+    </div>
+  </div>`;
+  document.getElementById('su_back').onclick = renderLogin;
+  document.getElementById('su_go').onclick = async (e)=>{
+    const btn=e.currentTarget;
+    const err=document.getElementById('su_err');
+    err.textContent='';
+    const name=document.getElementById('su_name').value.trim();
+    const email=document.getElementById('su_email').value.trim();
+    const pw=document.getElementById('su_pw').value;
+    const age=parseInt(document.getElementById('su_age').value,10);
+    const country=document.getElementById('su_country').value;
+    const city=document.getElementById('su_city').value.trim();
+    const gameIds=checkedIds('su_games');
+    const newGameName=document.getElementById('su_newgame').value.trim();
+    if(!name||!email||!age){ err.textContent='Please fill in your name, email and age.'; return; }
+    if(!country){ err.textContent='Please select your country — it is required.'; return; }
+    if(!pwOk(pw)){ err.textContent='Password does not meet the requirements.'; return; }
+    const nameErr = await validateName(name, email);
+    if(nameErr){ err.textContent = nameErr; return; }
+    setLoading(btn,true,'Registering...');
+    const {data,error} = await sb.auth.signUp({email,password:pw});
+    // "email already taken" shows up either as an error or (with Confirm-email on)
+    // as a user with an empty identities list.
+    const alreadyExists = (error && /already registered|already exists/i.test(error.message))
+      || !!(data && data.user && data.user.identities && data.user.identities.length===0);
+    let uid=null;
+    if(alreadyExists){
+      // May be their own login (e.g. they already use the original STTL app). Try their password.
+      const {data:sd, error:se} = await sb.auth.signInWithPassword({email,password:pw});
+      if(se){ setLoading(btn,false); err.textContent='An account with this email already exists. Please log in with your existing password, or use Forgot password.'; return; }
+      session = sd.session; uid = sd.user.id;
+      const {data:ex} = await sb.from('sttl2_players').select('id').eq('id',uid).maybeSingle();
+      if(ex){ await loadMeAndBoot(); return; }
+    } else {
+      if(error){ setLoading(btn,false); err.textContent=error.message; return; }
+      uid = data.user?.id;
+      if(!uid){ setLoading(btn,false); err.textContent='Could not create your account. Please try again.'; return; }
+      if(!data.session){
+        setLoading(btn,false);
+        app.innerHTML = `<div class="card" style="max-width:460px;margin:30px auto"><h2>Almost there ✉️</h2>
+          <p>Your login was created. Please confirm your email address using the link we just sent, then log in — you'll be asked to finish your profile (country and games) the first time.</p>
+          <button class="btn" id="su_tologin">Go to login</button></div>`;
+        document.getElementById('su_tologin').onclick = renderLogin;
+        return;
+      }
+      session = data.session;
+    }
+    const msg = await createProfile(uid, {name,email,age,country,city,gameIds,newGameName});
+    if(msg){ setLoading(btn,false); err.textContent = msg; return; }
+    showJustRegisteredNotice();
+    await loadMeAndBoot();
+  };
+}
+
+// Creates (or completes) the player profile + the chosen games.
+async function createProfile(uid, f){
+  let r = await sb.from('sttl2_players').upsert({id:uid, name:f.name, country:f.country, city:f.city||null},{onConflict:'id'});
+  if(r.error) return r.error.message;
+  r = await sb.from('sttl2_player_private').upsert({id:uid, email:f.email, age:f.age},{onConflict:'id'});
+  if(r.error) return r.error.message;
+  const ids = new Set(f.gameIds||[]);
+  if(f.newGameName){
+    const g = await createGame(f.newGameName, '', true, uid);
+    if(g.error) return g.error;
+    ids.add(g.game.id);
+  }
+  if(ids.size){
+    await sb.from('sttl2_player_games').upsert([...ids].map(id=>({player_id:uid, game_id:id})),{onConflict:'player_id,game_id',ignoreDuplicates:true});
+  }
+  return null;
+}
+
+async function renderForgot(){
+  app.innerHTML = `
+  <div class="card" style="max-width:440px;margin:30px auto">
+    <h2>Forgot password</h2>
+    <p class="muted">No email is sent. Verify your details first, then set a new password right here.</p>
+    <label>Email</label><input id="fp_email" type="email">
+    <label>Age</label><input id="fp_age" type="number">
+    <label>Country</label>
+    <select id="fp_country">${countryOptions('', 'Select your country…')}</select>
+    <div class="error" id="fp_verify_err"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="fp_verify">Verify</button>
+      <button class="btn ghost" id="fp_back">Back</button>
+    </div>
+    <div id="fp_pw_section" class="hidden">
+      <label>New password</label><input id="fp_pw" type="password" autocomplete="new-password">
+      <div class="muted">Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.</div>
+      <label>Confirm password</label><input id="fp_pw2" type="password" autocomplete="new-password">
+      <div class="error" id="fp_err"></div>
+      <button class="btn" id="fp_submit" style="margin-top:12px">Set New Password</button>
+    </div>
+  </div>`;
+  document.getElementById('fp_back').onclick = renderLogin;
+  document.getElementById('fp_verify').onclick = async (e)=>{
+    const btn=e.currentTarget;
+    const email=document.getElementById('fp_email').value.trim();
+    const age=parseInt(document.getElementById('fp_age').value,10);
+    const country=document.getElementById('fp_country').value;
+    const err=document.getElementById('fp_verify_err');
+    err.style.color='var(--warn)';
+    if(!email||!age||!country){ err.textContent='Please fill all fields.'; return; }
+    setLoading(btn,true,'Verifying...');
+    const {data:ok, error} = await sb.rpc('sttl2_verify_reset_details',{p_email:email,p_age:age,p_country:country});
+    setLoading(btn,false);
+    if(error){ err.textContent=error.message; return; }
+    if(!ok){
+      document.getElementById('fp_pw_section').classList.add('hidden');
+      err.textContent='No account matches those details.';
+      return;
+    }
+    err.style.color='var(--ok)';
+    err.textContent='Details verified — set your new password below.';
+    document.getElementById('fp_pw_section').classList.remove('hidden');
+  };
+  document.getElementById('fp_submit').onclick = async (e)=>{
+    const btn=e.currentTarget;
+    const email=document.getElementById('fp_email').value.trim();
+    const age=parseInt(document.getElementById('fp_age').value,10);
+    const country=document.getElementById('fp_country').value;
+    const pw=document.getElementById('fp_pw').value;
+    const pw2=document.getElementById('fp_pw2').value;
+    const err=document.getElementById('fp_err');
+    err.style.color='var(--warn)';
+    if(!pwOk(pw)){ err.textContent='Password does not meet the requirements.'; return; }
+    if(pw!==pw2){ err.textContent='Passwords do not match.'; return; }
+    setLoading(btn,true,'Updating...');
+    const {data:ok, error:rpcErr} = await sb.rpc('sttl2_reset_password_verified', {p_email:email,p_age:age,p_country:country,p_new_password:pw});
+    setLoading(btn,false);
+    if(rpcErr){ err.textContent = rpcErr.message; return; }
+    if(!ok){ err.textContent = 'No account matches those details.'; return; }
+    err.style.color='var(--ok)';
+    err.textContent = 'Password updated. You can log in now.';
+  };
+}
+
+// Shown when a login has no STTL2 profile yet (e.g. they use the original
+// STTL app, or an earlier signup was interrupted) or when the country is missing.
+async function renderCompleteProfile(user, p, pv){
+  nav.classList.add('hidden');
+  if(games.length===0) await loadGames();
+  const missingCountry = !!p && !p.country;
+  app.innerHTML = `
+  <div class="card" style="max-width:480px;margin:30px auto">
+    <h2>${missingCountry ? 'One more thing — your country' : 'Finish setting up your STTL2 profile'}</h2>
+    <p class="muted">${missingCountry ? 'A country is required so you can be placed on the country and worldwide rankings.' : `You're logged in as ${esc(user.email)}. Fill in these details to start playing.`}</p>
+    <label>Display name</label><input id="cp_name" maxlength="40" value="${esc(p?.name||'')}">
+    <label>Age</label><input id="cp_age" type="number" min="5" max="110" value="${pv?.age||''}">
+    <label>Country (required)</label>
+    <select id="cp_country">${countryOptions(p?.country||'', 'Select your country…')}</select>
+    <label>City / club (optional)</label><input id="cp_city" maxlength="60" value="${esc(p?.city||'')}">
+    ${p ? '' : `<label>Which games do you play?</label>${gameChecklistHtml('cp_games')}
+    <label>Not in the list? Add your game</label><input id="cp_newgame" maxlength="40" placeholder="Optional">`}
+    <div class="error" id="cp_err"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="cp_go">Save &amp; Continue</button>
+      <button class="btn ghost" id="cp_logout">Log out</button>
+    </div>
+  </div>`;
+  document.getElementById('cp_logout').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+  document.getElementById('cp_go').onclick = async (e)=>{
+    const btn=e.currentTarget;
+    const err=document.getElementById('cp_err'); err.textContent='';
+    const name=document.getElementById('cp_name').value.trim();
+    const age=parseInt(document.getElementById('cp_age').value,10);
+    const country=document.getElementById('cp_country').value;
+    const city=document.getElementById('cp_city').value.trim();
+    if(!name||!age){ err.textContent='Please fill in your name and age.'; return; }
+    if(!country){ err.textContent='Please select your country — it is required.'; return; }
+    const nameErr = await validateName(name, user.email, user.id);
+    if(nameErr){ err.textContent = nameErr; return; }
+    setLoading(btn,true,'Saving...');
+    const msg = await createProfile(user.id, {name, email:user.email, age, country, city,
+      gameIds: document.getElementById('cp_games') ? checkedIds('cp_games') : [],
+      newGameName: document.getElementById('cp_newgame') ? document.getElementById('cp_newgame').value.trim() : ''});
+    if(msg){ setLoading(btn,false); err.textContent = msg; return; }
+    if(!p) showJustRegisteredNotice();
+    await loadMeAndBoot();
+  };
+}
+
+function showJustRegisteredNotice(){
+  modal(`<h2>Welcome to STTL2 🎉</h2>
+    <p>Your account is ready — you can start playing right away. Pick a game on the <b>Dashboard</b> or <b>Play</b> tab, challenge someone, or record a match you've already played.</p>
+    <p class="muted">You can change your country, photo and games any time under <b>Profile</b>.</p>
+    <div class="row">
+      <a class="btn" href="${WHATSAPP_URL}" target="_blank" rel="noopener">💬 Need help? WhatsApp us</a>
+      <button class="btn ghost" id="reg_ok">Got it</button>
+    </div>`);
+  document.getElementById('reg_ok').onclick = closeModal;
+}
+
+// ---------- BOOT ----------
+function logLogin(){
+  try{
+    const k='sttl2_login_logged_'+me.id;
+    const last=+sessionStorage.getItem(k)||0;
+    if(Date.now()-last<30*60*1000) return;
+    sessionStorage.setItem(k,String(Date.now()));
+  }catch(e){}
+  try{ sb.from('sttl2_login_log').insert({user_id:me.id}).then(()=>{},()=>{}); }catch(e){}
+}
+async function loadMeAndBoot(){
+  const {data:{user}} = await sb.auth.getUser();
+  if(!user){ renderLogin(); return; }
+  const {data:p} = await sb.from('sttl2_players').select('*').eq('id',user.id).maybeSingle();
+  const {data:pv} = await sb.from('sttl2_player_private').select('email,age,admin_pin_enabled').eq('id',user.id).maybeSingle();
+  if(!p || !pv || !p.country || !pv.age){ renderCompleteProfile(user, p, pv); return; }
+  me = {...p, email:user.email, age:pv.age, admin_pin_enabled:pv.admin_pin_enabled};
+  const previousLoginAt = me.last_login_at;
+  sb.from('sttl2_players').update({last_login_at:new Date().toISOString()}).eq('id',me.id).then(()=>{},()=>{});
+  me.last_login_at = previousLoginAt;
+  logLogin();
+  await Promise.all([loadGames(), loadConfig(), loadMyGames(), loadMyMatchCount(), refreshPlayers()]);
+  nav.classList.remove('hidden');
+  updateWhoBar();
+  document.getElementById('adminNavBtn').classList.toggle('hidden', !me.is_admin);
+  document.querySelectorAll('.navbtn[data-tab]').forEach(b=>{
+    b.onclick=()=>{ if(b.dataset.tab==='play' && !canPlay(me)) return; activeTab=b.dataset.tab; renderTab(); };
+  });
+  document.getElementById('logoutBtn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+  await checkLoginPopups();
+  activeTab='dashboard'; renderTab();
+}
+
+async function checkLoginPopups(){
+  if(me.last_played_on && daysSince(me.last_played_on) >= 10){
+    modal(`
+      <h2>We missed you! 👋</h2>
+      <p>You haven't played in ${daysSince(me.last_played_on)} days. Let us know why so an admin can follow up.</p>
+      <textarea id="reason" rows="3" placeholder="e.g. travelling, injury, busy at work..."></textarea>
+      <div class="row" style="margin-top:12px"><button class="btn" id="sendReason">Submit</button></div>
+    `);
+    document.getElementById('sendReason').onclick = async ()=>{
+      const reason=document.getElementById('reason').value.trim();
+      if(reason) await sb.from('sttl2_inactivity_notes').insert({player_id:me.id, reason});
+      closeModal(); showMatchPopup();
+    };
+    return;
+  }
+  showMatchPopup();
+}
+async function showMatchPopup(){
+  const {data:ch} = await sb.from('sttl2_challenges').select('*').or(`challenger_id.eq.${me.id},opponent_id.eq.${me.id},challenger_partner_id.eq.${me.id},opponent_partner_id.eq.${me.id}`).eq('status','accepted');
+  const chIds = (ch||[]).map(c=>c.id);
+  let results = [];
+  if(chIds.length){
+    const {data} = await sb.from('sttl2_match_results').select('*').in('challenge_id',chIds);
+    results = data || [];
+  }
+  // Completed matches are not shown — only what still needs something from the player.
+  const upcoming = (ch||[]).filter(c => !results.find(r=>r.challenge_id===c.id));
+  const pendingAction = results.filter(r => !r.acknowledged && r.entered_by !== me.id);
+  const {data:pend} = await sb.from('sttl2_challenges').select('id').eq('opponent_id',me.id).eq('status','pending');
+  const totalPendingAction = pendingAction.length + (pend?pend.length:0);
+  if(upcoming.length || totalPendingAction){
+    modal(`<h2>Welcome back!</h2>
+      <p>${upcoming.length} upcoming match(es), ${totalPendingAction} pending action(s) waiting on you.</p>
+      <button class="btn" id="okM">Got it</button>`);
+    document.getElementById('okM').onclick=closeModal;
+  }
+}
+
+// ---------- TAB ROUTER ----------
+function renderTab(){
+  document.querySelectorAll('.navbtn[data-tab]').forEach(b=>b.classList.toggle('active', b.dataset.tab===activeTab));
+  document.querySelector('[data-tab="play"]').disabled = !canPlay(me);
+  if(activeTab==='dashboard') return renderDashboard();
+  if(activeTab==='play') return renderPlay();
+  if(activeTab==='history') return renderHistory();
+  if(activeTab==='profile') return renderProfile();
+  if(activeTab==='info') return renderInfo();
+  if(activeTab==='admin') return renderAdminGate();
+}
+
+// ---------- LEADERBOARD DATA (one game at a time) ----------
+let boardCache = null; // {gid, rows, results}
+async function loadBoard(gid){
+  const pgRows = await fetchAllRows((a,b)=>sb.from('sttl2_player_games')
+    .select('player_id,rating,wins,losses,played, sttl2_players!inner(id,name,country,city,photo_url,is_approved)')
+    .eq('game_id',gid).order('player_id').range(a,b));
+  const results = await fetchAllRows((a,b)=>sb.from('sttl2_match_results')
+    .select('*, sttl2_challenges!inner(*)').eq('acknowledged',true).eq('sttl2_challenges.game_id',gid).order('id').range(a,b));
+  const stat = {};
+  const ensure = id => stat[id] || (stat[id] = {singlesWins:0,singlesLosses:0,doublesWins:0,doublesLosses:0});
+  results.forEach(r=>{
+    const c = r.sttl2_challenges; if(!c) return;
+    const dbl = c.match_type==='doubles';
+    const A = [c.challenger_id, c.challenger_partner_id].filter(Boolean);
+    const B = [c.opponent_id, c.opponent_partner_id].filter(Boolean);
+    const win = r.winner_side==='challenger' ? A : B, lose = r.winner_side==='challenger' ? B : A;
+    win.forEach(id=>{ const s=ensure(id); if(dbl) s.doublesWins++; else s.singlesWins++; });
+    lose.forEach(id=>{ const s=ensure(id); if(dbl) s.doublesLosses++; else s.singlesLosses++; });
+  });
+  const rows = pgRows.map(x=>{ const pl=pick1(x.sttl2_players); return pl ? ({
+    id:x.player_id, name:pl.name, country:pl.country||'', city:pl.city,
+    photo_url:pl.photo_url, is_approved:pl.is_approved,
+    rating:x.rating, wins:x.wins, losses:x.losses, played:x.played,
+    singlesWins:0,singlesLosses:0,doublesWins:0,doublesLosses:0, ...(stat[x.player_id]||{})
+  }) : null; }).filter(p=>p && p.is_approved);
+  boardCache = {gid, rows, results};
+  return boardCache;
+}
+const rankRows = rows => [...rows].sort((a,b)=> b.rating-a.rating || b.played-a.played || String(a.name).localeCompare(String(b.name)));
+function scopeLabel(){
+  if(scope==='mine' && me) return me.country;
+  if(scope.startsWith('c:')) return scope.slice(2);
+  return 'Worldwide';
+}
+function inScope(p){
+  if(scope==='mine' && me) return p.country===me.country;
+  if(scope.startsWith('c:')) return p.country===scope.slice(2);
+  return true;
+}
+function scopeBarHtml(rows){
+  const countries = [...new Set(rows.map(r=>r.country).filter(Boolean).concat(me&&me.country?[me.country]:[]))].sort((a,b)=>a.localeCompare(b));
+  return `<label>Ranking view</label>
+    <select id="scopeSel">
+      <option value="global" ${scope==='global'?'selected':''}>🌍 Global — everyone using the app</option>
+      ${me ? `<option value="mine" ${scope==='mine'?'selected':''}>📍 My country — ${esc(me.country)}</option>` : ''}
+      ${countries.map(c=>`<option value="c:${esc(c)}" ${scope==='c:'+c?'selected':''}>${esc(c)}</option>`).join('')}
+    </select>`;
+}
+function monthKeyOf(d){ const x=new Date(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'); }
+function monthKeyOffset(off){ const x=new Date(); x.setDate(1); x.setMonth(x.getMonth()+off); return monthKeyOf(x); }
+function monthLabel(key){ const [y,m]=key.split('-'); return new Date(+y,+m-1,1).toLocaleDateString(undefined,{month:'long',year:'numeric'}); }
+function resultPlayedAt(r){ return r.sttl2_challenges?.scheduled_at || r.recorded_at || r.created_at; }
+// period: 'overall' or a month key like '2026-10'; limited to the people in `rows`
+function mostPlayedRows(period, rows, results){
+  const stat={};
+  results.forEach(r=>{
+    const c=r.sttl2_challenges; if(!c) return;
+    if(period!=='overall' && monthKeyOf(resultPlayedAt(r))!==period) return;
+    const A=[c.challenger_id,c.challenger_partner_id].filter(Boolean);
+    const B=[c.opponent_id,c.opponent_partner_id].filter(Boolean);
+    const win = r.winner_side==='challenger'?A:B, lose = r.winner_side==='challenger'?B:A;
+    win.forEach(id=>{ const t=stat[id]||(stat[id]={played:0,wins:0,losses:0}); t.played++; t.wins++; });
+    lose.forEach(id=>{ const t=stat[id]||(stat[id]={played:0,wins:0,losses:0}); t.played++; t.losses++; });
+  });
+  return rows.map(p=>({...p, mpPlayed:0, mpWins:0, mpLosses:0, ...(stat[p.id]?{mpPlayed:stat[p.id].played,mpWins:stat[p.id].wins,mpLosses:stat[p.id].losses}:{})}));
+}
+// Most matches played first; ties: most wins, then higher points, then name A–Z.
+function rankMostPlayed(rows){
+  return [...rows].sort((a,b)=> b.mpPlayed-a.mpPlayed || b.mpWins-a.mpWins || b.rating-a.rating || String(a.name).localeCompare(String(b.name)));
+}
+function tieNote(sorted){
+  if(sorted.length<2 || sorted[0].mpPlayed===0) return '';
+  const a=sorted[0], b=sorted[1];
+  if(a.mpPlayed!==b.mpPlayed) return '';
+  if(a.mpWins!==b.mpWins) return `tied on ${a.mpPlayed} played — decided by most wins`;
+  if(a.rating!==b.rating) return `tied on ${a.mpPlayed} played and ${a.mpWins} wins — decided by higher points`;
+  return 'tied on everything — decided alphabetically';
+}
+const limitFor = list => dashboardShowAll ? Math.min(list.length,500) : 15;
+
+function boardsHtml(g, rows, results, meId){
+  const scoped = rows.filter(inScope);
+  const byRating = rankRows(scoped);
+  const you = p => p.id===meId ? ' <span class="tag">you</span>' : '';
+  const who = p => `${avatarHtml(p,22)}${esc(p.name)}${you(p)}`;
+  const empty = n => `<tr><td colspan="${n}" class="muted">No players yet in this view.</td></tr>`;
+  const curKey = monthKeyOffset(0), lastKey = monthKeyOffset(-1);
+  const mpOverall = rankMostPlayed(mostPlayedRows('overall', scoped, results));
+  const mpThis = rankMostPlayed(mostPlayedRows(curKey, scoped, results));
+  const mpLast = rankMostPlayed(mostPlayedRows(lastKey, scoped, results));
+  const mpView = mostPlayedView==='overall' ? {k:'overall',rows:mpOverall,label:'Overall (all time)'}
+               : mostPlayedView==='last' ? {k:lastKey,rows:mpLast,label:monthLabel(lastKey)}
+               : {k:curKey,rows:mpThis,label:monthLabel(curKey)};
+  const leaderLine = rs => rs[0] && rs[0].mpPlayed>0 ? `${esc(rs[0].name)} — ${rs[0].mpPlayed} matches${tieNote(rs)?` <span class="muted">(${tieNote(rs)})</span>`:''}` : '-';
+  const champRows = [0,-1,-2,-3,-4,-5].map(off=>{
+    const k=monthKeyOffset(off); const r=rankMostPlayed(mostPlayedRows(k, scoped, results));
+    return `<tr><td>${monthLabel(k)}</td><td>${r[0]&&r[0].mpPlayed>0? '👑 '+esc(r[0].name):'<span class="muted">No matches</span>'}</td><td>${r[0]&&r[0].mpPlayed>0? r[0].mpPlayed:'—'}</td><td class="muted">${tieNote(r)}</td></tr>`;
+  }).join('');
+  const typeBoard = (wKey,lKey)=>{
+    const list = [...scoped].sort((a,b)=>b[wKey]-a[wKey] || (b[wKey]-b[lKey])-(a[wKey]-a[lKey]) || b.rating-a.rating || String(a.name).localeCompare(String(b.name)));
+    return list.slice(0,limitFor(list)).map((p,i)=>`<tr><td>${i+1}</td><td>${who(p)}</td><td>${esc(p.country)}</td><td><b>${p.rating}</b></td><td>${p[wKey]+p[lKey]}</td><td>${p[wKey]}</td><td>${p[lKey]}</td><td>${winPct(p[wKey],p[lKey])}</td></tr>`).join('') || empty(8);
+  };
+  const champ = byRating[0];
+  const head8 = '<tr><th>#</th><th>Player</th><th>Country</th><th>Points</th><th>Played</th><th>Wins</th><th>Losses</th><th>Win %</th></tr>';
+  return `
+  <div class="card"><h2>${esc(g.emoji)} ${esc(g.name)} — highlights · ${esc(scopeLabel())}</h2>
+    <p>🏆 <b>Top rated:</b> ${champ? `${esc(champ.name)} (${esc(champ.country)}) — ${champ.rating} pts`:'-'}</p>
+    <p>🎯 <b>Most played — overall:</b> ${leaderLine(mpOverall)}</p>
+    <p>📅 <b>Most played — ${monthLabel(curKey)}:</b> ${leaderLine(mpThis)}</p>
+    <p>🗓️ <b>Most played — ${monthLabel(lastKey)}:</b> ${leaderLine(mpLast)}</p>
+    <p class="muted">Showing ${dashboardShowAll? 'all' : 'the top 15 of'} ${scoped.length} player(s) in this view.</p>
+    <div class="row"><button class="btn ${dashboardShowAll?'ghost':''}" id="dash_top15">Top 15</button><button class="btn ${dashboardShowAll?'':'ghost'}" id="dash_showall">Show all (${scoped.length})</button></div>
+  </div>
+  <div class="card"><h2>Overall leaderboard (by points)</h2>
+    <div class="table-scroll"><table><tr><th>#</th><th>Player</th><th>Country</th><th>Level</th><th>Points</th><th>Played</th><th>W–L</th><th>Win %</th></tr>
+    ${byRating.slice(0,limitFor(byRating)).map((p,i)=>`<tr><td>${i+1}</td><td>${who(p)}</td><td>${esc(p.country)}</td><td><span class="tag">${ratingLevel(p.rating)}</span></td><td><b>${p.rating}</b></td><td>${p.played}</td><td>${p.wins}–${p.losses}</td><td>${winPct(p.wins,p.losses)}</td></tr>`).join('') || empty(8)}
+    </table></div>
+  </div>
+  <div class="card"><h2>🎯 Most played leaderboard</h2>
+    <div class="row">
+      <button class="btn ${mpView.k===curKey?'':'ghost'}" id="mp_this">This month</button>
+      <button class="btn ${mpView.k===lastKey?'':'ghost'}" id="mp_last">Last month</button>
+      <button class="btn ${mpView.k==='overall'?'':'ghost'}" id="mp_overall">Overall</button>
+    </div>
+    <p class="muted" style="margin:8px 0">${mpView.label} — most matches played wins; if tied: most wins, then higher points, then name A–Z.</p>
+    <div class="table-scroll"><table><tr><th>#</th><th>Player</th><th>Country</th><th>Played</th><th>Wins</th><th>Losses</th><th>Win %</th><th>Points</th></tr>
+    ${mpView.rows.slice(0,limitFor(mpView.rows)).map((p,i)=>`<tr><td>${i===0&&p.mpPlayed>0?'👑':i+1}</td><td>${who(p)}</td><td>${esc(p.country)}</td><td>${p.mpPlayed}</td><td>${p.mpWins}</td><td>${p.mpLosses}</td><td>${winPct(p.mpWins,p.mpLosses)}</td><td>${p.rating}</td></tr>`).join('') || empty(8)}
+    </table></div>
+  </div>
+  <div class="card"><h2>Singles leaderboard</h2>
+    <div class="table-scroll"><table>${head8}${typeBoard('singlesWins','singlesLosses')}</table></div>
+  </div>
+  ${g.supports_doubles ? `<div class="card"><h2>Doubles leaderboard</h2>
+    <div class="table-scroll"><table>${head8}${typeBoard('doublesWins','doublesLosses')}</table></div>
+  </div>` : ''}
+  <div class="card"><h2>👑 Monthly most-played champions</h2>
+    <div class="table-scroll"><table><tr><th>Month</th><th>Champion</th><th>Matches</th><th>Tie-break</th></tr>${champRows}</table></div>
+  </div>
+  <div class="card"><h2>🏅 Levels by rating</h2>
+    <div class="table-scroll"><table><tr><th>Rating band</th><th>Level</th><th>What it means</th></tr>
+      <tr><td>2700+</td><td>Pro</td><td>Top of the field</td></tr>
+      <tr><td>2200–2699</td><td>Elite</td><td>Consistently beats strong players</td></tr>
+      <tr><td>1700–2199</td><td>Advanced</td><td>Strong, experienced player</td></tr>
+      <tr><td>1200–1699</td><td>Intermediate</td><td>Solid, improving player</td></tr>
+      <tr><td>Below 1200</td><td>Beginner</td><td>Just getting started — everyone starts at 1000</td></tr>
+    </table></div>
+  </div>`;
+}
+function wireBoards(rerender){
+  const bind = (id,fn)=>{ const el=document.getElementById(id); if(el) el.onclick=fn; };
+  bind('mp_this', ()=>{ mostPlayedView='this'; rerender(); });
+  bind('mp_last', ()=>{ mostPlayedView='last'; rerender(); });
+  bind('mp_overall', ()=>{ mostPlayedView='overall'; rerender(); });
+  bind('dash_top15', ()=>{ dashboardShowAll=false; rerender(); });
+  bind('dash_showall', ()=>{ dashboardShowAll=true; rerender(); });
+  const sel=document.getElementById('scopeSel');
+  if(sel) sel.onchange = e=>{ scope=e.target.value; rerender(); };
+}
+
+// ---------- GUEST DASHBOARD ----------
+async function renderGuestDashboard(){
+  nav.classList.add('hidden');
+  showLoading('Loading dashboard…');
+  me = null; myGames = [];
+  if(games.length===0) await loadGames();
+  const g = curGame();
+  if(!g){ app.innerHTML='<div class="card"><button class="btn ghost" id="guest_back">← Back to Login</button><p class="muted">No games available yet.</p></div>'; document.getElementById('guest_back').onclick=renderLogin; return; }
+  if(scope==='mine') scope='global';
+  const {rows, results} = await loadBoard(g.id);
+  app.innerHTML = `
+  <div class="card"><button class="btn ghost" id="guest_back">← Back to Login</button></div>
+  <div class="card"><h2>Pick a game</h2>${gameBarHtml({allowAdd:false})}${scopeBarHtml(rows)}</div>
+  ${boardsHtml(g, rows, results, null)}`;
+  document.getElementById('guest_back').onclick = renderLogin;
+  wireGameBar(renderGuestDashboard);
+  wireBoards(renderGuestDashboard);
+}
+
+// ---------- DASHBOARD ----------
+async function renderDashboard(){
+  showLoading('Loading dashboard…');
+  await Promise.all([refreshPlayers(), loadMyGames(), loadMyMatchCount(), loadConfig()]);
+  updateWhoBar();
+  const g = curGame();
+  if(!g){ app.innerHTML='<div class="card"><h2>Dashboard</h2><p class="muted">No games available yet — add one from the Play tab.</p></div>'; return; }
+  const {rows, results} = await loadBoard(g.id);
+  const allRank = rankRows(rows);
+  const scoped = rankRows(rows.filter(inScope));
+  const mineRow = rows.find(p=>p.id===me.id);
+  const iPlay = !!mineRow;
+  const mine = mineRow || {rating:1000,wins:0,losses:0,played:0};
+  const rankScope = scoped.findIndex(p=>p.id===me.id)+1;
+  const rankWorld = allRank.findIndex(p=>p.id===me.id)+1;
+  const curKey = monthKeyOffset(0);
+  const gameMonth = results.filter(r=>monthKeyOf(resultPlayedAt(r))===curKey).length;
+  const myAllGamesPlayed = myGames.reduce((s,x)=>s+(x.played||0),0);
+  const leagueAll = await sb.from('sttl2_match_results').select('id',{count:'exact',head:true}).eq('acknowledged',true);
+  const f = freeLimitInfo();
+  app.innerHTML = `
+  <div class="card"><h2>Pick a game</h2>${gameBarHtml()}${scopeBarHtml(rows)}</div>
+  <div class="card"><h2>Your status — ${esc(g.emoji)} ${esc(g.name)}</h2>
+    <div class="row" style="align-items:center">
+      <div style="flex:0 0 auto;min-width:0"><img src="${esc(me.photo_url || DUMMY_AVATAR)}" alt="" style="width:72px;height:88px;object-fit:contain;background:var(--bg);border:1px solid var(--line);border-radius:6px"></div>
+      <div><b>${esc(me.name)}</b><div class="muted">📍 ${esc(me.country)}${me.city?' · '+esc(me.city):''}</div>
+        <a class="link" onclick="activeTab='profile';renderTab()">Edit profile &amp; photo</a></div>
+    </div>
+    ${iPlay ? '' : `<p class="muted" style="margin-top:10px">You haven't added ${esc(g.name)} to your games yet. <button class="btn ghost" id="addToMine" style="padding:4px 10px;min-height:30px">Add to my games</button></p>`}
+    <div class="stat-grid">
+      <div class="card"><div class="muted">Points (rating)</div><div class="v">${mine.rating}</div></div>
+      <div class="card"><div class="muted">Level</div><div class="v" style="font-size:20px">${ratingLevel(mine.rating)}</div></div>
+      <div class="card"><div class="muted">Record</div><div class="v">${mine.wins}W – ${mine.losses}L</div></div>
+      <div class="card"><div class="muted">Win %</div><div class="v">${winPct(mine.wins,mine.losses)}</div></div>
+      <div class="card"><div class="muted">Rank · ${esc(scopeLabel())}</div><div class="v">${iPlay&&rankScope?'#'+rankScope:'-'} <span class="muted">of ${scoped.length}</span></div></div>
+      <div class="card"><div class="muted">Rank · Worldwide</div><div class="v">${iPlay&&rankWorld?'#'+rankWorld:'-'} <span class="muted">of ${allRank.length}</span></div></div>
+      <div class="card"><div class="muted">Your ${esc(g.name)} matches</div><div class="v">${mine.played}</div></div>
+      <div class="card"><div class="muted">Your matches, all games</div><div class="v">${myAllGamesPlayed}</div></div>
+      <div class="card"><div class="muted">${esc(g.name)} matches (all time)</div><div class="v">${results.length}</div></div>
+      <div class="card"><div class="muted">${esc(g.name)} matches this month</div><div class="v">${gameMonth}</div></div>
+      <div class="card"><div class="muted">All games, all players</div><div class="v">${leagueAll.count||0}</div></div>
+      ${f ? `<div class="card"><div class="muted">Free matches left</div><div class="v">${f.left} <span class="muted">of ${f.limit}</span></div></div>` : ''}
+    </div>
+    <p class="muted" style="margin-top:10px">Last login: ${fmtDateTime(me.last_login_at)}</p>
+  </div>
+  ${boardsHtml(g, rows, results, me.id)}`;
+  wireGameBar(renderDashboard);
+  wireBoards(renderDashboard);
+  const add=document.getElementById('addToMine');
+  if(add) add.onclick = async ()=>{
+    setLoading(add,true,'Adding...');
+    await sb.from('sttl2_player_games').upsert({player_id:me.id, game_id:g.id},{onConflict:'player_id,game_id',ignoreDuplicates:true});
+    renderDashboard();
+  };
+}
+
+// ---------- SEARCHABLE PLAYER PICKERS ----------
+function pickerHtml(id,label){
+  return `<label>${label}</label>
+    <input class="picker-q" id="${id}_q" placeholder="🔍 Search by name or country…" autocomplete="off">
+    <select id="${id}"></select>`;
+}
+function fillPicker(id, list, ratings){
+  const sel=document.getElementById(id); if(!sel) return;
+  const q=(document.getElementById(id+'_q').value||'').trim().toLowerCase();
+  const prev=sel.value;
+  const l=list.filter(p=>!q || String(p.name).toLowerCase().includes(q) || String(p.country||'').toLowerCase().includes(q)).slice(0,200);
+  sel.innerHTML = l.map(p=>`<option value="${p.id}" data-name="${esc(p.name)}">${esc(p.name)} (${esc(p.country||'—')})${ratings&&ratings[p.id]?' · '+ratings[p.id]:''}</option>`).join('') || '<option value="">No players found</option>';
+  if(prev && l.some(p=>p.id===prev)) sel.value=prev;
+}
+function wirePicker(id, list, ratings, onChange){
+  fillPicker(id,list,ratings);
+  document.getElementById(id+'_q').oninput = ()=>{ fillPicker(id,list,ratings); if(onChange) onChange(); };
+  document.getElementById(id).onchange = ()=>{ if(onChange) onChange(); };
+}
+function pickedName(id){
+  const sel=document.getElementById(id);
+  return sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].dataset.name || '' : '';
+}
+async function quietAutoApprove(){
+  try{ await sb.rpc('sttl2_auto_approve_stale'); }catch(e){ /* never block loading */ }
+}
+async function loadGameRatings(gid){
+  const rows = await fetchAllRows((a,b)=>sb.from('sttl2_player_games').select('player_id,rating').eq('game_id',gid).order('player_id').range(a,b));
+  const m={}; rows.forEach(r=>m[r.player_id]=r.rating); return m;
+}
+const sideNames = (a,b)=> esc2(nameOf(a)) + (b ? ' &amp; '+esc2(nameOf(b)) : '');
+const esc2 = s => s; // nameOf already returns escaped text
+
+// ---------- PLAY ----------
+async function renderPlay(){
+  if(!canPlay(me)){
+    app.innerHTML = `<div class="card"><h2>Play</h2><p class="muted">Your account has been paused by an admin. Please message support on WhatsApp if you think this is a mistake.</p></div>`;
+    return;
+  }
+  showLoading('Loading your matches…');
+  await quietAutoApprove();
+  await Promise.all([refreshPlayers(), loadMyMatchCount(), loadConfig(), loadMyGames()]);
+  updateWhoBar();
+  const g = curGame();
+  if(!g){ app.innerHTML='<div class="card"><h2>Play</h2><p class="muted">No games yet — add one below.</p><button class="btn" id="gb_add">➕ Add a game</button></div>'; wireGameBar(renderPlay); return; }
+  const ratings = await loadGameRatings(g.id);
+  const mineOr = `challenger_id.eq.${me.id},opponent_id.eq.${me.id},challenger_partner_id.eq.${me.id},opponent_partner_id.eq.${me.id}`;
+  const {data:incoming} = await sb.from('sttl2_challenges').select('*').eq('opponent_id',me.id).eq('status','pending').order('scheduled_at');
+  const {data:outgoing} = await sb.from('sttl2_challenges').select('*').eq('challenger_id',me.id).eq('status','pending').order('scheduled_at');
+  const {data:accepted} = await sb.from('sttl2_challenges').select('*').or(mineOr).eq('status','accepted').order('scheduled_at',{ascending:false}).limit(60);
+  const ids = (accepted||[]).map(c=>c.id);
+  let results=[];
+  if(ids.length){ const {data} = await sb.from('sttl2_match_results').select('*').in('challenge_id',ids); results=data||[]; }
+  const gameTag = c => { const x=gameById(c.game_id); return x ? `${esc(x.emoji)} ${esc(x.name)}` : '—'; };
+  const f = freeLimitInfo();
+
+  const matchRows = (accepted||[]).map(c=>{
+    const res = results.find(r=>r.challenge_id===c.id);
+    const when = c.scheduled_at ? fmtPlayed(c.scheduled_at) : '<span class="muted">—</span>';
+    const winnerNm = res ? (res.winner_side==='challenger'?nameOf(c.challenger_id):nameOf(c.opponent_id)) : '';
+    let action='';
+    if(!res){
+      action = `<button class="btn" onclick="openScoreEntry('${c.id}')">Enter winner</button>`;
+    } else if(!res.acknowledged && res.entered_by!==me.id){
+      action = `<button class="btn" onclick="ackScore(this,'${res.id}')">Accept result</button> <button class="btn danger" onclick="rejectResult(this,'${res.id}')">Reject</button> <span class="muted">(winner: ${winnerNm})</span>`;
+    } else if(!res.acknowledged){
+      action = `<span class="badge muted">Waiting for opponent to accept</span>`;
+    } else {
+      action = `<span class="badge ok">Points recorded — winner: ${winnerNm}</span>`;
+    }
+    let pointsCell = '<span class="muted">—</span>';
+    if(res && res.acknowledged && res.rating_delta){
+      const mySide = (c.challenger_id===me.id || c.challenger_partner_id===me.id);
+      const iWon = (res.winner_side==='challenger') === mySide;
+      pointsCell = iWon ? `<span class="badge ok">+${res.rating_delta}</span>` : `<span class="badge warn">−${res.rating_delta}</span>`;
+    }
+    return `<tr><td>${gameTag(c)}</td><td>${when}</td><td>${c.match_type}</td><td>${sideNames(c.challenger_id,c.challenger_partner_id)}</td><td>${sideNames(c.opponent_id,c.opponent_partner_id)}</td><td>${esc(c.venue||'—')}</td><td>${pointsCell}</td><td>${action}</td></tr>`;
+  });
+  const typeOpts = `<option value="singles">Singles (1 vs 1)</option>${g.supports_doubles?'<option value="doubles">Doubles (2 vs 2)</option>':''}`;
+
+  app.innerHTML = `
+  <div class="card"><h2>Choose your game</h2>${gameBarHtml()}
+    <p style="margin:10px 0 0"><b>Playing:</b> ${esc(g.emoji)} ${esc(g.name)}</p>
+    ${f ? `<p class="${f.left?'muted':'error'}" style="margin:6px 0 0">Free matches: ${f.used} of ${f.limit} used${f.left?'':' — you have used all your free matches. Ask an admin about a subscription to keep playing.'}</p>` : ''}
+  </div>
+  <div class="card"><h2>Record a match you've already played</h2>
+    <p class="muted">For ${esc(g.name)} games played outside a formal challenge — pick who played and who won. Your opponent must accept it before points move.</p>
+    <label>Match type</label>
+    <select id="qr_type">${typeOpts}</select>
+    ${pickerHtml('qr_opp','Opponent')}
+    <div id="qr_partnerBox" class="hidden">
+      ${pickerHtml('qr_myPartner','Your partner')}
+      ${pickerHtml('qr_oppPartner',"Opponent's partner")}
+    </div>
+    <label>Winner</label>
+    <select id="qr_winner"><option value="me">Me</option><option value="opp">Opponent</option></select>
+    <label>Date &amp; time played (required)</label>
+    <input type="datetime-local" id="qr_when">
+    <label>Venue (required — any place name)</label>
+    <input id="qr_venue" maxlength="120" placeholder="e.g. Bishan CC, Joe's garage, online">
+    <button class="btn" id="qr_submit" style="margin-top:12px">Submit for opponent's approval</button>
+    <div class="error" id="qr_err"></div>
+  </div>
+  <div class="card"><h2>Your matches</h2>
+    <p class="muted">All your agreed matches, across every game. Pick the winner — your opponent must accept it for the points to count.</p>
+    <div class="table-scroll"><table><tr><th>Game</th><th>Played / due</th><th>Type</th><th>Side A</th><th>Side B</th><th>Venue</th><th>Points</th><th>Status</th></tr>${matchRows.join('')||'<tr><td colspan="8" class="muted">No accepted matches yet.</td></tr>'}</table></div>
+  </div>
+  <div class="card"><h2>Challenge someone</h2>
+    <label>Match type</label>
+    <select id="mtype">${typeOpts}</select>
+    ${pickerHtml('opp','Opponent')}
+    <div id="partnerBox" class="hidden">
+      ${pickerHtml('myPartner','Your partner')}
+      ${pickerHtml('oppPartner',"Opponent's partner")}
+    </div>
+    <label>Date &amp; time you want to play (required)</label>
+    <input type="datetime-local" id="whenPlay">
+    <label>Venue (required — any place name)</label>
+    <input id="venue" maxlength="120" placeholder="e.g. Bishan CC, Joe's garage, online">
+    <button class="btn" id="sendChallenge" style="margin-top:12px">Send ${esc(g.name)} challenge</button>
+    <div class="error" id="ch_err"></div>
+  </div>
+  <div class="card"><h2>Incoming challenges</h2>
+    ${(incoming&&incoming.length)? incoming.map(c=>`
+      <div class="row" style="align-items:center;border-bottom:1px solid var(--line);padding:8px 0">
+        <div>${nameOf(c.challenger_id)} challenged you to <b>${gameTag(c)}</b> (${c.match_type})${c.scheduled_at?` — <span class="muted">${fmtDateTime(c.scheduled_at)}</span>`:''}${c.venue?` <span class="muted">at ${esc(c.venue)}</span>`:''}</div>
+        <div><button class="btn" onclick="respondChallenge(this,'${c.id}','accepted')">Accept</button>
+        <button class="btn ghost" onclick="respondChallenge(this,'${c.id}','declined')">Decline</button></div>
+      </div>`).join('') : '<p class="muted">None right now.</p>'}
+  </div>
+  <div class="card"><h2>Outgoing challenges (pending)</h2>
+    ${(outgoing&&outgoing.length)? outgoing.map(c=>`<div class="muted" style="padding:6px 0">Waiting on ${nameOf(c.opponent_id)} — ${gameTag(c)} (${c.match_type})${c.scheduled_at?` — ${fmtDateTime(c.scheduled_at)}`:''}${c.venue?` at ${esc(c.venue)}`:''}</div>`).join(''):'<p class="muted">None right now.</p>'}
+  </div>`;
+  wireGameBar(renderPlay);
+
+  // ---- pickers
+  const list = [...players].sort(byName);
+  const updQr = ()=>{
+    const dbl = document.getElementById('qr_type').value==='doubles';
+    let myL = me.name, opL = pickedName('qr_opp') || 'Opponent';
+    if(dbl){ const a=pickedName('qr_myPartner'), b=pickedName('qr_oppPartner'); if(a) myL+=' & '+a; if(b) opL+=' & '+b; }
+    const w=document.getElementById('qr_winner');
+    w.options[0].textContent = myL; w.options[1].textContent = opL;
+  };
+  wirePicker('qr_opp', list, ratings, updQr);
+  wirePicker('qr_myPartner', list, ratings, updQr);
+  wirePicker('qr_oppPartner', list, ratings, updQr);
+  wirePicker('opp', list, ratings);
+  wirePicker('myPartner', list, ratings);
+  wirePicker('oppPartner', list, ratings);
+  document.getElementById('qr_type').onchange = e=>{
+    document.getElementById('qr_partnerBox').classList.toggle('hidden', e.target.value!=='doubles');
+    updQr();
+  };
+  document.getElementById('mtype').onchange = e=>{
+    document.getElementById('partnerBox').classList.toggle('hidden', e.target.value!=='doubles');
+  };
+  updQr();
+  document.getElementById('whenPlay').min = localInputValue(new Date(Date.now()-60*60*1000));
+  document.getElementById('qr_when').max = localInputValue(new Date());
+
+  const distinctCheck = (ids)=>{
+    const s=ids.filter(Boolean);
+    if(s.length !== ids.length) return 'Please choose every player.';
+    if(new Set(s).size !== s.length) return 'Each player in a match must be a different person.';
+    return '';
+  };
+  document.getElementById('sendChallenge').onclick = async (e)=>{
+    const btn=e.currentTarget, errEl=document.getElementById('ch_err');
+    errEl.style.color='var(--warn)'; errEl.textContent='';
+    const match_type=document.getElementById('mtype').value;
+    const opponent_id=document.getElementById('opp').value;
+    const whenVal=document.getElementById('whenPlay').value;
+    const venue=document.getElementById('venue').value.trim();
+    const chk=validatePlayWhenVenue(whenVal, venue, 'challenge');
+    if(chk){ errEl.textContent=chk; return; }
+    const dbl = match_type==='doubles';
+    const myP = dbl ? document.getElementById('myPartner').value : null;
+    const opP = dbl ? document.getElementById('oppPartner').value : null;
+    const dc = distinctCheck(dbl ? [me.id, opponent_id, myP, opP] : [me.id, opponent_id]);
+    if(dc){ errEl.textContent=dc; return; }
+    setLoading(btn,true,'Sending...');
+    const lim = await monthlyLimitMessage(g, opponent_id, match_type, whenVal);
+    if(lim){ setLoading(btn,false); errEl.textContent=lim; return; }
+    const payload = {game_id:g.id, challenger_id:me.id, opponent_id, match_type, status:'pending', scheduled_at:new Date(whenVal).toISOString(), venue};
+    if(dbl){ payload.challenger_partner_id=myP; payload.opponent_partner_id=opP; }
+    const {error} = await sb.from('sttl2_challenges').insert(payload);
+    if(error){ setLoading(btn,false); errEl.textContent = error.message; }
+    else renderPlay();
+  };
+  document.getElementById('qr_submit').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('qr_err');
+    err.textContent='';
+    const match_type=document.getElementById('qr_type').value;
+    const opponent_id=document.getElementById('qr_opp').value;
+    const winner=document.getElementById('qr_winner').value;
+    const whenVal=document.getElementById('qr_when').value;
+    const venue=document.getElementById('qr_venue').value.trim();
+    const chk=validatePlayWhenVenue(whenVal, venue, 'played');
+    if(chk){ err.textContent=chk; return; }
+    const dbl = match_type==='doubles';
+    const myP = dbl ? document.getElementById('qr_myPartner').value : null;
+    const opP = dbl ? document.getElementById('qr_oppPartner').value : null;
+    const dc = distinctCheck(dbl ? [me.id, opponent_id, myP, opP] : [me.id, opponent_id]);
+    if(dc){ err.textContent=dc; return; }
+    setLoading(btn,true,'Submitting...');
+    const lim = await monthlyLimitMessage(g, opponent_id, match_type, whenVal);
+    if(lim){ setLoading(btn,false); err.textContent=lim; return; }
+    const payload = {game_id:g.id, challenger_id:me.id, opponent_id, match_type, status:'accepted', scheduled_at:new Date(whenVal).toISOString(), venue};
+    if(dbl){ payload.challenger_partner_id=myP; payload.opponent_partner_id=opP; }
+    const {data:newChallenge, error:cErr} = await sb.from('sttl2_challenges').insert(payload).select().single();
+    if(cErr){ setLoading(btn,false); err.textContent = cErr.message; return; }
+    const winner_side = winner==='me' ? 'challenger' : 'opponent';
+    const {error:rErr} = await sb.from('sttl2_match_results').insert({challenge_id:newChallenge.id, sets:null, winner_side, entered_by:me.id});
+    if(rErr){ setLoading(btn,false); err.textContent = rErr.message; return; }
+    renderPlay();
+  };
+}
+
+// Friendly pre-check; the database enforces the same rules (and is the authority).
+async function monthlyLimitMessage(g, opponentId, matchType, whenVal){
+  const base = whenVal ? new Date(whenVal) : new Date();
+  const monthStart=new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1)).toISOString();
+  const nextStart=new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth()+1, 1)).toISOString();
+  const {data:mine}=await sb.from('sttl2_challenges').select('id,match_type,challenger_id,opponent_id')
+    .eq('game_id',g.id).neq('status','declined')
+    .gte('scheduled_at', monthStart).lt('scheduled_at', nextStart)
+    .or(`challenger_id.eq.${me.id},opponent_id.eq.${me.id},challenger_partner_id.eq.${me.id},opponent_partner_id.eq.${me.id}`);
+  const rows=mine||[];
+  if(rows.length>=10) return `You have reached the limit of 10 ${g.name} matches in that calendar month.`;
+  if(matchType!=='doubles'){
+    const dup=rows.some(r=>r.match_type!=='doubles' && ((r.challenger_id===me.id&&r.opponent_id===opponentId)||(r.challenger_id===opponentId&&r.opponent_id===me.id)));
+    if(dup) return `You have already played this player in ${g.name} singles that calendar month. The same matchup is limited to once a month.`;
+  }
+  return null;
+}
+window.respondChallenge = async (btn,id,status)=>{
+  setLoading(btn,true,'Saving...');
+  const {error} = await sb.from('sttl2_challenges').update({status}).eq('id',id);
+  if(error){ setLoading(btn,false); alert('Could not update the challenge: '+error.message); return; }
+  renderPlay();
+};
+window.openScoreEntry = async (challengeId)=>{
+  const {data:c} = await sb.from('sttl2_challenges').select('*').eq('id',challengeId).single();
+  const mySide = (c.challenger_id===me.id || c.challenger_partner_id===me.id);
+  const label = (a,b)=> nameOf(a) + (b ? ' &amp; '+nameOf(b) : '');
+  const myLabel = mySide ? label(c.challenger_id,c.challenger_partner_id) : label(c.opponent_id,c.opponent_partner_id);
+  const oppLabel = mySide ? label(c.opponent_id,c.opponent_partner_id) : label(c.challenger_id,c.challenger_partner_id);
+  modal(`<h2>Enter winner</h2>
+    <p class="muted">Just pick who won — the other side will need to accept this before it counts.</p>
+    <label>Winner</label>
+    <select id="win_pick"><option value="me">${myLabel}</option><option value="opp">${oppLabel}</option></select>
+    <div class="row" style="margin-top:12px"><button class="btn" onclick="submitScore(this,'${challengeId}')">Submit</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>
+    <div class="error" id="sc_err"></div>`);
+};
+window.submitScore = async (btn,challengeId)=>{
+  const winner=document.getElementById('win_pick').value;
+  setLoading(btn,true,'Submitting...');
+  const {data:c} = await sb.from('sttl2_challenges').select('*').eq('id',challengeId).single();
+  const mySide = (c.challenger_id===me.id || c.challenger_partner_id===me.id);
+  const winner_side = winner==='me' ? (mySide?'challenger':'opponent') : (mySide?'opponent':'challenger');
+  const {error} = await sb.from('sttl2_match_results').insert({challenge_id:challengeId, sets:null, winner_side, entered_by:me.id});
+  if(error){ setLoading(btn,false); document.getElementById('sc_err').textContent = error.message; return; }
+  closeModal(); renderPlay();
+};
+window.ackScore = async (btn,resultId)=>{
+  setLoading(btn,true,'Recording...');
+  const {error} = await sb.rpc('sttl2_acknowledge_result', {p_result_id: resultId});
+  setLoading(btn,false);
+  if(error){ alert('Could not record this result: '+error.message); return; }
+  renderPlay();
+};
+window.rejectResult = async (btn,resultId)=>{
+  if(!confirm("Reject this result? It will be removed so either player can submit the correct winner.")) return;
+  setLoading(btn,true,'Rejecting...');
+  const {error} = await sb.rpc('sttl2_reject_result', {p_result_id: resultId});
+  setLoading(btn,false);
+  if(error){ alert('Could not reject this result: '+error.message); return; }
+  renderPlay();
+};
+
+// ---------- MY SPORTS (history grouped by sport) ----------
+async function renderHistory(){
+  showLoading('Loading your sports history…');
+  await Promise.all([refreshPlayers(), loadMyGames(), loadGames()]);
+  const mineOr = `challenger_id.eq.${me.id},opponent_id.eq.${me.id},challenger_partner_id.eq.${me.id},opponent_partner_id.eq.${me.id}`;
+  const chals = await fetchAllRows((a,b)=>sb.from('sttl2_challenges').select('*').or(mineOr).order('scheduled_at',{ascending:false}).order('id').range(a,b));
+  let results=[];
+  for(let i=0;i<chals.length;i+=150){
+    const {data} = await sb.from('sttl2_match_results').select('*').in('challenge_id',chals.slice(i,i+150).map(c=>c.id));
+    results.push(...(data||[]));
+  }
+  const gameIds = new Set([...myGames.map(x=>x.game_id), ...chals.map(c=>c.game_id)]);
+  const list = [...gameIds].map(id=>{
+    const gm = gameById(id); const mg = myGames.find(x=>x.game_id===id);
+    return {id, game:gm, rating:mg?mg.rating:1000, wins:mg?mg.wins:0, losses:mg?mg.losses:0, played:mg?mg.played:0, matches:chals.filter(c=>c.game_id===id)};
+  }).filter(x=>x.game).sort((a,b)=>b.played-a.played || b.matches.length-a.matches.length || byName(a.game,b.game));
+
+  const matchRow = c=>{
+    const res = results.find(r=>r.challenge_id===c.id);
+    const mySide = (c.challenger_id===me.id || c.challenger_partner_id===me.id);
+    const mine = mySide ? sideNames(c.challenger_id,c.challenger_partner_id) : sideNames(c.opponent_id,c.opponent_partner_id);
+    const theirs = mySide ? sideNames(c.opponent_id,c.opponent_partner_id) : sideNames(c.challenger_id,c.challenger_partner_id);
+    let result, pts='<span class="muted">—</span>';
+    if(c.status==='declined') result='<span class="badge muted">Declined</span>';
+    else if(c.status==='pending') result='<span class="badge muted">Challenge pending</span>';
+    else if(!res) result='<span class="badge warn">Awaiting winner</span>';
+    else if(!res.acknowledged) result='<span class="badge warn">Result awaiting acceptance</span>';
+    else {
+      const won = (res.winner_side==='challenger') === mySide;
+      result = won ? '<span class="badge ok">Won</span>' : '<span class="badge warn">Lost</span>';
+      if(res.rating_delta) pts = won ? `<span class="badge ok">+${res.rating_delta}</span>` : `<span class="badge warn">−${res.rating_delta}</span>`;
+    }
+    return `<tr><td>${fmtPlayed(c.scheduled_at)}</td><td>${c.match_type}</td><td>${mine} <span class="muted">vs</span> ${theirs}</td><td>${esc(c.venue||'—')}</td><td>${result}</td><td>${pts}</td></tr>`;
+  };
+  app.innerHTML = `
+  <div class="card"><h2>My sports</h2>
+    <p class="muted">Every game you've played or signed up for, with your rating and record. Open a sport to see each match.</p>
+    <div class="table-scroll"><table><tr><th>Sport</th><th>Points</th><th>Level</th><th>Played</th><th>W–L</th><th>Win %</th></tr>
+    ${list.map(x=>`<tr><td>${esc(x.game.emoji)} ${esc(x.game.name)}</td><td><b>${x.rating}</b></td><td><span class="tag">${ratingLevel(x.rating)}</span></td><td>${x.played}</td><td>${x.wins}–${x.losses}</td><td>${winPct(x.wins,x.losses)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No sports yet — pick a game on the Dashboard or Play tab.</td></tr>'}
+    </table></div>
+  </div>
+  <div class="card"><h2>Matches by sport</h2>
+    ${list.length ? list.map((x,i)=>`<details class="sport" ${(x.id===selectedGameId||(!gameById(selectedGameId)&&i===0))?'open':''}>
+      <summary>${esc(x.game.emoji)} ${esc(x.game.name)} <span class="muted">· ${x.matches.length} match${x.matches.length===1?'':'es'} · ${x.rating} pts</span></summary>
+      <div class="inner">${x.matches.length ? `<div class="table-scroll"><table><tr><th>Played</th><th>Type</th><th>Match</th><th>Venue</th><th>Result</th><th>Points</th></tr>${x.matches.map(matchRow).join('')}</table></div>` : '<p class="muted">No matches yet in this sport.</p>'}</div>
+    </details>`).join('') : '<p class="muted">Nothing here yet.</p>'}
+  </div>`;
+}
+
+// ---------- PROFILE ----------
+async function renderProfile(){
+  showLoading('Loading your profile…');
+  await Promise.all([loadGames(), loadMyGames(), loadMyMatchCount(), loadConfig()]);
+  const f = freeLimitInfo();
+  const mySet = new Set(myGames.map(x=>x.game_id));
+  const locked = new Set(myGames.filter(x=>x.played>0).map(x=>x.game_id));
+  const top = new Set(topGames.map(g=>g.id));
+  const ordered = [...topGames, ...games.filter(g=>!top.has(g.id)).sort(byName)];
+  app.innerHTML = `
+  <div class="card"><h2>My profile</h2>
+    <div class="row" style="align-items:center">
+      <div style="flex:0 0 auto;min-width:0"><img id="pf_img" src="${esc(me.photo_url || DUMMY_AVATAR)}" alt="" style="width:90px;height:110px;object-fit:contain;background:var(--bg);border:1px solid var(--line);border-radius:6px"></div>
+      <div>
+        <input type="file" id="photo_file" accept="image/*" style="max-width:240px">
+        <button class="btn ghost" id="photo_submit" style="margin-top:6px">Upload photo</button>
+        <div class="muted">Photos are compressed automatically before uploading.</div>
+        <div class="error" id="photo_err"></div>
+      </div>
+    </div>
+    <label>Email (cannot be changed here)</label><input value="${esc(me.email||'')}" disabled>
+    <label>Display name</label><input id="pf_name" maxlength="40" value="${esc(me.name)}">
+    <div class="row">
+      <div><label>Age</label><input id="pf_age" type="number" min="5" max="110" value="${me.age||''}"></div>
+      <div><label>Country (required)</label><select id="pf_country">${countryOptions(me.country,'Select your country…')}</select></div>
+    </div>
+    <label>City / club (optional)</label><input id="pf_city" maxlength="60" value="${esc(me.city||'')}">
+    <h3>Games I play</h3>
+    <p class="muted">Tick the games you play. A game you've already played matches in stays ticked. These show up under “My other games” on your Dashboard and Play tabs.</p>
+    <div class="checklist" id="pf_games">${ordered.map(g=>`
+      <label class="inline"><input type="checkbox" value="${g.id}" ${mySet.has(g.id)?'checked':''} ${locked.has(g.id)?'disabled':''}> ${esc(g.emoji)} ${esc(g.name)}${top.has(g.id)?' <span class="tag">top 5</span>':''}${locked.has(g.id)?' <span class="muted">(has matches)</span>':''}</label>`).join('')}</div>
+    <p style="margin-top:8px"><button class="btn ghost" id="pf_addgame">➕ Add a game that isn't listed</button></p>
+    <div class="error" id="pf_err"></div>
+    <button class="btn" id="pf_save" style="margin-top:10px">Save profile</button>
+  </div>
+  <div class="card"><h2>Change password</h2>
+    <label>New password</label><input id="pw_new" type="password" autocomplete="new-password">
+    <div class="muted">Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.</div>
+    <label>Confirm new password</label><input id="pw_new2" type="password" autocomplete="new-password">
+    <div class="error" id="pw_err"></div>
+    <button class="btn" id="pw_save" style="margin-top:10px">Update password</button>
+  </div>
+  <div class="card"><h2>Account</h2>
+    <p>Last login: ${fmtDateTime(me.last_login_at)}</p>
+    <p>Account status: ${me.is_approved?'<span class="badge ok">Active</span>':'<span class="badge warn">Paused by admin</span>'}${me.is_admin?' <span class="tag">admin</span>':''}</p>
+    ${f ? `<p>Free matches: <b>${f.used}</b> of <b>${f.limit}</b> used${f.left?'':' — you have used them all; ask an admin about a subscription'}.</p>` : `<p class="muted">Playing is free for everyone right now.</p>`}
+  </div>`;
+
+  document.getElementById('pf_addgame').onclick = ()=>openAddGame(renderProfile);
+  document.getElementById('photo_submit').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('photo_err'); err.textContent='';
+    const file=document.getElementById('photo_file').files[0];
+    if(!file){ err.textContent='Please choose a photo.'; return; }
+    setLoading(btn,true,'Compressing...');
+    let compressed;
+    try{ compressed = await compressImage(file, 600, 0.8); }
+    catch(ce){ setLoading(btn,false); err.textContent = ce.message; return; }
+    setLoading(btn,true,'Uploading...');
+    const path = `${me.id}/${Date.now()}.jpg`;
+    const {error:upErr} = await sb.storage.from('player-photos').upload(path, compressed, {upsert:true, contentType:'image/jpeg'});
+    if(upErr){ setLoading(btn,false); err.textContent = upErr.message; return; }
+    const {data:urlData} = sb.storage.from('player-photos').getPublicUrl(path);
+    const {error:updErr} = await sb.from('sttl2_players').update({photo_url:urlData.publicUrl}).eq('id',me.id);
+    setLoading(btn,false);
+    if(updErr){ err.textContent = updErr.message; return; }
+    me.photo_url = urlData.publicUrl;
+    document.getElementById('pf_img').src = me.photo_url;
+  };
+  document.getElementById('pf_save').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('pf_err');
+    err.style.color='var(--warn)'; err.textContent='';
+    const name=document.getElementById('pf_name').value.trim();
+    const age=parseInt(document.getElementById('pf_age').value,10);
+    const country=document.getElementById('pf_country').value;
+    const city=document.getElementById('pf_city').value.trim();
+    if(!name||!age){ err.textContent='Please fill in your name and age.'; return; }
+    if(!country){ err.textContent='Country is required.'; return; }
+    const nameErr = await validateName(name, me.email, me.id);
+    if(nameErr){ err.textContent=nameErr; return; }
+    setLoading(btn,true,'Saving...');
+    let r = await sb.from('sttl2_players').update({name,country,city:city||null}).eq('id',me.id);
+    if(r.error){ setLoading(btn,false); err.textContent=r.error.message; return; }
+    r = await sb.from('sttl2_player_private').update({age}).eq('id',me.id);
+    if(r.error){ setLoading(btn,false); err.textContent=r.error.message; return; }
+    // sync "games I play": add newly ticked, remove unticked ones that have no matches
+    const want = new Set(checkedIds('pf_games'));
+    locked.forEach(id=>want.add(id));
+    const toAdd=[...want].filter(id=>!mySet.has(id));
+    const toRemove=[...mySet].filter(id=>!want.has(id) && !locked.has(id));
+    if(toAdd.length) await sb.from('sttl2_player_games').upsert(toAdd.map(id=>({player_id:me.id,game_id:id})),{onConflict:'player_id,game_id',ignoreDuplicates:true});
+    if(toRemove.length) await sb.from('sttl2_player_games').delete().eq('player_id',me.id).in('game_id',toRemove);
+    me.name=name; me.country=country; me.city=city||null; me.age=age;
+    await loadMyGames(); await refreshPlayers(); updateWhoBar();
+    setLoading(btn,false);
+    err.style.color='var(--ok)'; err.textContent='Profile saved.';
+  };
+  document.getElementById('pw_save').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('pw_err');
+    err.style.color='var(--warn)'; err.textContent='';
+    const a=document.getElementById('pw_new').value, b=document.getElementById('pw_new2').value;
+    if(!pwOk(a)){ err.textContent='Password does not meet the requirements.'; return; }
+    if(a!==b){ err.textContent='Passwords do not match.'; return; }
+    setLoading(btn,true,'Updating...');
+    const {error} = await sb.auth.updateUser({password:a});
+    setLoading(btn,false);
+    if(error){ err.textContent=error.message; return; }
+    document.getElementById('pw_new').value=''; document.getElementById('pw_new2').value='';
+    err.style.color='var(--ok)'; err.textContent='Password updated.';
+  };
+}
+
+// ---------- INFO ----------
+function renderInfo(){
+  app.innerHTML = `<div class="card"><h2>How STTL2 works</h2>
+    <p><b>1. Sign up</b> with your name, email, password, age and <b>country</b> (country is required — it places you on the country and worldwide rankings). Pick the games you play, or add a new one. You can log in and play straight away.</p>
+    <p><b>2. Pick a game.</b> The <b>top 5 most-played games</b> are always shown as buttons, your own games appear next to them, and every game is in the A–Z list. Anyone can add a new game — table tennis, badminton, chess, darts, FIFA… anything two (or four) people can play.</p>
+    <p><b>3. Challenge</b> any player in that game from the Play tab (singles, or doubles where the game allows it). Give a date, time and venue — the venue is just plain text, so a park, a club or “online” is fine.</p>
+    <p><b>4. Accept</b> — your opponent must accept before the match counts.</p>
+    <p><b>5. Winner entry</b> — either side picks who won; the other side must accept it before points move. We track the winner only, not the score.</p>
+    <p><b>6. My Sports</b> shows every game you've played with your rating and each match underneath it. <b>Profile</b> lets you change your details, country, photo, password and games.</p>
+    <h2>Rankings: your country or the world</h2>
+    <p>Every game has its own leaderboard and every player has a separate rating per game. On the Dashboard you can switch the <b>Ranking view</b> between <b>Global</b> (everyone using the app), <b>My country</b>, or any other country. Your rank is shown both in the chosen view and worldwide.</p>
+    <h2>How points are awarded</h2>
+    <p>Every player starts each game at <b>1000 points</b>. Points move based on how surprising the result was — not a flat amount every time:</p>
+    <p>🏆 An <b>underdog beating a much higher-rated player</b> gains a big jump in points, and the favourite drops by the same amount.</p>
+    <p>😐 A <b>heavy favourite beating a clear underdog</b> only gains a few points, and the underdog only loses a few.</p>
+    <p class="muted">Example: you're rated 1000 and beat someone rated 1200 — a genuine upset — you gain 24 points and they lose 24. If a 1200 beats a 1000 as expected, they only gain 8. Ratings never drop below 100.</p>
+    <h2>How doubles scoring works</h2>
+    <p>Doubles uses each <b>team's average rating</b>. Both partners on the winning team gain the same number of points, and both on the losing team lose that same number.</p>
+    <p class="muted">Example: Team A averages 1050 and Team B averages 1250. If Team A pulls off the upset, both Team A players gain 24 points and both Team B players lose 24. If Team B wins as expected, everyone moves 8.</p>
+    <h2>Match limits</h2>
+    <p>For each game, <b>the exact same matchup</b> (same players for singles, or the same four players in the same teams for doubles) can be played <b>once per calendar month</b>, and each player can play at most <b>10 matches per calendar month</b> in that game. Both limits reset on the 1st of each month (UTC).</p>
+    <h2>Date, time and venue</h2>
+    <p>Every match needs a <b>date &amp; time</b> and a <b>venue</b>. A match that has already been played can't be dated in the future. Leaderboards and monthly limits use the date the match was <b>played</b>.</p>
+    <h2>Most-played leaderboards</h2>
+    <p>Besides points, each game has a <b>Most Played</b> board for <b>this month</b>, <b>last month</b> and <b>overall</b>. The player with the most matches played comes first. Ties are broken by: 1️⃣ most wins, 2️⃣ higher points, 3️⃣ name A–Z. A fresh monthly board starts on the 1st.</p>
+    <h2>When a result is waiting for acceptance</h2>
+    <p>Once someone submits a winner, the other side can <b>accept</b> or <b>reject</b> it. If nobody responds, an <b>admin can approve it at any time</b> — and after <b>48 hours it is approved automatically</b>.</p>
+    <h2>Inactivity check-in</h2>
+    <p>If you haven't played for 10 days, we'll ask what's going on next time you log in.</p>
+    <h2>Free to use</h2>
+    <p>STTL2 is free for every registered player. Admins have a switch that can later limit free play to a set number of matches per player, after which a subscription would be needed — you'll see your remaining free matches on the Dashboard if that is ever switched on.</p>
+    <h2>Need help?</h2>
+    <p>Tap the <b>💬 help icon</b> in the top corner, or <a class="link" href="${WHATSAPP_URL}" target="_blank" rel="noopener">message us on WhatsApp</a>, for technical support.</p>
+  </div>`;
+}
+
+// ---------- ADMIN ----------
+async function renderAdminGate(){
+  if(!me.is_admin){ activeTab='dashboard'; return renderDashboard(); }
+  if(!me.admin_pin_enabled){ return renderAdmin(); }
+  modal(`<h2>Admin PIN</h2><input id="pinInp" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN" style="text-align:center;font-size:22px;letter-spacing:6px">
+    <div class="error" id="pinErr"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="pinGo">Enter</button><button class="btn ghost" id="pinCancel">Cancel</button></div>`);
+  document.getElementById('pinCancel').onclick=()=>{closeModal(); activeTab='dashboard'; renderTab();};
+  const go = async ()=>{
+    const v=document.getElementById('pinInp').value;
+    const {data:ok,error} = await sb.rpc('sttl2_verify_admin_pin',{p_pin:v});
+    if(!error && ok){ closeModal(); renderAdmin(); }
+    else document.getElementById('pinErr').textContent = error ? error.message : 'Incorrect PIN.';
+  };
+  document.getElementById('pinGo').onclick=go;
+  document.getElementById('pinInp').onkeydown=e=>{ if(e.key==='Enter') go(); };
+}
+
+// Admin sections start collapsed; the ones the admin has opened are
+// remembered so an action that re-renders the tab doesn't snap them shut.
+const adminOpenSections = new Set();
+function makeCollapsible(container){
+  [...container.children].filter(el=>el.classList.contains('card')).forEach(card=>{
+    const h2 = [...card.children].find(el=>el.tagName==='H2');
+    if(!h2) return;
+    const label = h2.textContent;
+    const body = document.createElement('div');
+    body.className = 'collapsible-body';
+    [...card.childNodes].forEach(n=>{ if(n!==h2) body.appendChild(n); });
+    card.appendChild(body);
+    card.classList.add('admin-card');
+    h2.classList.add('collapsible-header');
+    const setState = (open)=>{
+      body.classList.toggle('hidden', !open);
+      h2.textContent = (open ? '▾ ' : '▸ ') + label;
+    };
+    setState(adminOpenSections.has(label));
+    h2.onclick = ()=>{
+      const open = body.classList.contains('hidden');
+      if(open) adminOpenSections.add(label); else adminOpenSections.delete(label);
+      setState(open);
+    };
+  });
+}
+window.openAdminSection = (label)=>{ adminOpenSections.add(label); renderAdmin(); };
+
+let adminPlayerList = [];
+let adminGames = [];
+async function adminFetchPlayers(q){
+  const sel = '*, sttl2_player_private(email,age)';
+  q = (q||'').trim();
+  if(!q){
+    const {data} = await sb.from('sttl2_players').select(sel).order('created_at',{ascending:false}).limit(100);
+    return data||[];
+  }
+  const like = '%'+q.replace(/[%,()]/g,' ')+'%';
+  const a = await sb.from('sttl2_players').select(sel).or(`name.ilike.${like},country.ilike.${like},city.ilike.${like}`).limit(100);
+  const b = await sb.from('sttl2_player_private').select('id').ilike('email',like).limit(100);
+  const have = new Set((a.data||[]).map(p=>p.id));
+  const extraIds = (b.data||[]).map(x=>x.id).filter(id=>!have.has(id));
+  let extra=[];
+  if(extraIds.length){ const r = await sb.from('sttl2_players').select(sel).in('id',extraIds); extra=r.data||[]; }
+  return [...(a.data||[]), ...extra];
+}
+const pvOf = p => pick1(p.sttl2_player_private) || {};
+
+async function renderAdmin(){
+  showLoading('Loading admin tools…');
+  await quietAutoApprove();
+  await Promise.all([refreshPlayers(), loadConfig()]);
+  const gm = await sb.from('sttl2_games').select('*').order('name');
+  adminGames = gm.data||[];
+  const gameMatchCount = {};
+  (await fetchAllRows((a,b)=>sb.from('sttl2_challenges').select('id,game_id').order('id').range(a,b))).forEach(c=>{ gameMatchCount[c.game_id]=(gameMatchCount[c.game_id]||0)+1; });
+  adminPlayerList = await adminFetchPlayers('');
+  const totalPlayers = (await sb.from('sttl2_players').select('id',{count:'exact',head:true})).count || 0;
+  const notes = await sb.from('sttl2_inactivity_notes').select('*, sttl2_players!inner(name)').order('created_at',{ascending:false}).limit(100);
+  let actStats=null, anomalies=[], dashErr='';
+  try{
+    const r1 = await sb.rpc('sttl2_admin_activity_stats',{p_days:30});
+    if(r1.error) dashErr = r1.error.message; else actStats = r1.data;
+    const r2 = await sb.rpc('sttl2_admin_match_anomalies');
+    if(r2.error) dashErr = dashErr || r2.error.message; else anomalies = r2.data || [];
+  }catch(e){ dashErr = String(e&&e.message||e); }
+  const {data:chals} = await sb.from('sttl2_challenges').select('*').order('scheduled_at',{ascending:false,nullsFirst:false}).limit(100);
+  const cIds = (chals||[]).map(c=>c.id);
+  let cResults = [];
+  if(cIds.length){ const {data} = await sb.from('sttl2_match_results').select('*').in('challenge_id',cIds); cResults = data||[]; }
+  const gTag = id => { const x=adminGames.find(g=>g.id===id); return x?`${esc(x.emoji)} ${esc(x.name)}`:'—'; };
+  const side = (a,b)=> nameOf(a)+(b?' &amp; '+nameOf(b):'');
+
+  const matchRowsAdmin = (chals||[]).slice(0,60).map(c=>{
+    const res = cResults.find(r=>r.challenge_id===c.id);
+    const winnerName = res ? (res.winner_side==='challenger'? nameOf(c.challenger_id) : nameOf(c.opponent_id)) : '-';
+    const over48 = res && !res.acknowledged && (new Date(res.created_at) < new Date(Date.now()-48*3600*1000));
+    const resultText = !res ? '<span class="badge muted">No result yet</span>'
+      : (res.acknowledged ? `<span class="badge ok">Recorded — ${winnerName}</span>`
+        : (over48 ? '<span class="badge warn">Pending 48h+ (auto-approves soon)</span>' : '<span class="badge warn">Pending acceptance</span>'));
+    const approveBtn = (res && !res.acknowledged) ? `<button class="btn" onclick="adminApproveResult(this,'${res.id}')">Approve</button> ` : '';
+    return `<tr><td>${gTag(c.game_id)}</td><td>${fmtPlayed(c.scheduled_at)}</td><td>${side(c.challenger_id,c.challenger_partner_id)}</td><td>${side(c.opponent_id,c.opponent_partner_id)}</td><td>${c.match_type}</td><td>${c.status}</td><td>${resultText}</td><td class="muted">${fmtDateTime(c.created_at)}</td><td>${approveBtn}<button class="btn danger" onclick="deleteMatch(this,'${c.id}')">Delete</button></td></tr>`;
+  }).join('') || '<tr><td colspan="9" class="muted">No matches yet.</td></tr>';
+
+  const historyRows = (type)=> (chals||[]).filter(c=>c.match_type===type).map(c=>({c, r:cResults.find(x=>x.challenge_id===c.id && x.acknowledged)})).filter(x=>x.r).slice(0,25).map(({c,r})=>{
+    const s1=side(c.challenger_id,c.challenger_partner_id), s2=side(c.opponent_id,c.opponent_partner_id);
+    const pts = r.rating_delta ? `<span class="badge ok">+${r.rating_delta}</span> <span class="badge warn">−${r.rating_delta}</span>` : '<span class="muted">—</span>';
+    return `<tr><td>${gTag(c.game_id)}</td><td>${fmtPlayed(c.scheduled_at)}</td><td>${s1}</td><td>${s2}</td><td>🏆 ${r.winner_side==='challenger'?s1:s2}</td><td>${pts}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="muted">No matches recorded yet.</td></tr>';
+
+  const sevBadge = sv => `<span class="badge ${sv==='high'?'warn':(sv==='medium'?'muted':'ok')}">${esc(sv)}</span>`;
+  const flagsByMatch = {};
+  anomalies.forEach(a=>{ if(a.match_id){ (flagsByMatch[a.match_id] = flagsByMatch[a.match_id] || []).push(a); } });
+  const bar = (v,max)=> `<span style="display:inline-block;vertical-align:middle;height:8px;width:${max? Math.round(v/max*70):0}px;background:currentColor;opacity:.45;border-radius:4px;margin-left:6px"></span>`;
+  const periodTable = (rows, labelFn)=>{
+    const mx = Math.max(1, ...rows.map(r=>r.users||0));
+    const mm = Math.max(1, ...rows.map(r=>r.matches||0));
+    return `<div class="table-scroll" style="max-height:320px;overflow:auto"><table><tr><th>Period</th><th>Users logged in</th><th>Total logins</th><th>Matches played</th></tr>${rows.map(r=>`<tr><td>${labelFn(r)}</td><td>${r.users}${bar(r.users,mx)}</td><td>${r.logins}</td><td>${r.matches}${bar(r.matches,mm)}</td></tr>`).join('')}</table></div>`;
+  };
+  const dayLbl = d => new Date(d+'T00:00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+  let activityHtml;
+  if(actStats){
+    const dly=actStats.daily||[], wk=actStats.weekly||[], mo=actStats.monthly||[];
+    activityHtml = `
+      <p class="muted">Counts are in UTC. “Users logged in” counts each person once per period. Matches are counted on the date they were <b>played</b>, across all games.</p>
+      <div class="stat-grid">
+        <div class="card"><div class="muted">Registered players</div><div class="v">${totalPlayers}</div></div>
+        <div class="card"><div class="muted">Users logged in today</div><div class="v">${dly[0]?dly[0].users:0}</div></div>
+        <div class="card"><div class="muted">This week</div><div class="v">${wk[0]?wk[0].users:0}</div></div>
+        <div class="card"><div class="muted">This month</div><div class="v">${mo[0]?mo[0].users:0}</div></div>
+        <div class="card"><div class="muted">Matches played today</div><div class="v">${dly[0]?dly[0].matches:0}</div></div>
+        <div class="card"><div class="muted">This week</div><div class="v">${wk[0]?wk[0].matches:0}</div></div>
+        <div class="card"><div class="muted">This month</div><div class="v">${mo[0]?mo[0].matches:0}</div></div>
+      </div>
+      <h3>Daily (last 30 days)</h3>${periodTable(dly, r=>dayLbl(r.day))}
+      <h3>Weekly (week starting Monday)</h3>${periodTable(wk, r=>'Week of '+dayLbl(r.start))}
+      <h3>Monthly</h3>${periodTable(mo, r=>new Date(r.start+'T00:00:00').toLocaleDateString(undefined,{month:'long',year:'numeric'}))}`;
+  } else {
+    activityHtml = `<p class="muted">Activity numbers aren't available yet. Run the latest <b>sttl2_schema.sql</b> in the Supabase SQL editor to switch this on.</p><div class="error">${esc(dashErr)}</div>`;
+  }
+  const flagsHtml = dashErr && !anomalies.length
+    ? `<p class="muted">Flags aren't available yet — run the latest <b>sttl2_schema.sql</b>.</p>`
+    : (anomalies.length
+      ? `<div class="table-scroll" style="max-height:320px;overflow:auto"><table><tr><th>Severity</th><th>Flag</th><th>Details</th><th>Played</th><th>Created</th></tr>${anomalies.map(a=>`<tr><td>${sevBadge(a.severity)}</td><td>${esc(a.flag)}</td><td>${esc(a.detail)}</td><td>${fmtPlayed(a.played_at)}</td><td>${a.created_at?fmtDateTime(a.created_at):'—'}</td></tr>`).join('')}</table></div>`
+      : '<p>✅ No abnormalities found.</p>');
+  const matchDetailRows = (chals||[]).map(c=>{
+    const res = cResults.find(r=>r.challenge_id===c.id);
+    const fl = flagsByMatch[c.id] || [];
+    const sideA = side(c.challenger_id,c.challenger_partner_id), sideB = side(c.opponent_id,c.opponent_partner_id);
+    const winner = res ? (res.winner_side==='challenger'? sideA : sideB) : '—';
+    const resTxt = !res ? '<span class="badge muted">No result</span>' : (res.acknowledged ? `<span class="badge ok">Recorded</span> 🏆 ${winner}` : `<span class="badge warn">Pending</span> 🏆 ${winner}`);
+    const pts = res && res.acknowledged && res.rating_delta ? `±${res.rating_delta}` : '—';
+    const flagTxt = fl.length ? fl.map(f=>`<span class="badge ${f.severity==='high'?'warn':'muted'}" title="${esc(f.detail)}">${esc(f.flag)}</span>`).join(' ') : '';
+    const gname = (adminGames.find(g=>g.id===c.game_id)||{}).name || '';
+    const searchText = (sideA+' '+sideB+' '+(c.venue||'')+' '+c.match_type+' '+gname).replace(/&amp;/g,'&').toLowerCase();
+    return `<tr class="md-row" data-flagged="${fl.length?1:0}" data-text="${esc(searchText)}"><td>${gTag(c.game_id)}</td><td>${fmtPlayed(c.scheduled_at)}</td><td>${c.venue?esc(c.venue):'—'}</td><td>${c.match_type}</td><td>${sideA}</td><td>${sideB}</td><td>${resTxt}</td><td>${pts}</td><td>${flagTxt}</td><td class="muted">${fmtDateTime(c.created_at)}</td></tr>`;
+  }).join('') || '<tr><td colspan="10" class="muted">No matches yet.</td></tr>';
+  const flagBanner = dashErr && !anomalies.length ? '' : (anomalies.length
+    ? `<div class="card" style="border-left:4px solid var(--warn);cursor:pointer" onclick="openAdminSection('Match review &amp; flags')"><b>⚠️ ${anomalies.length} item(s) flagged for review</b> <span class="muted">— (${anomalies.filter(a=>a.severity==='high').length} high). Tap to open “Match review &amp; flags”.</span></div>`
+    : `<div class="card" style="border-left:4px solid var(--ok)"><b>✅ No match abnormalities flagged.</b></div>`);
+
+  const approvedPlayers = [...allPlayers].filter(p=>p.is_approved).sort(byName);
+  const activeGames = adminGames.filter(g=>g.is_active);
+  const defGame = activeGames.find(g=>g.id===selectedGameId) || activeGames[0];
+
+  app.innerHTML = `
+  ${flagBanner}
+  <div class="card"><h2>Activity dashboard</h2>${activityHtml}</div>
+  <div class="card"><h2>Match review &amp; flags</h2>
+    <h3>Flagged items</h3>${flagsHtml}
+    <h3>Match details (latest 100 by played date)</h3>
+    <div class="row" style="align-items:center">
+      <input id="mdFilter" placeholder="Filter by player, game, venue or type…">
+      <label class="inline" style="flex:0 0 auto;white-space:nowrap"><input type="checkbox" id="mdFlagged"> Flagged only</label>
+    </div>
+    <div class="table-scroll" style="max-height:420px;overflow:auto"><table><tr><th>Game</th><th>Played</th><th>Venue</th><th>Type</th><th>Side A</th><th>Side B</th><th>Result</th><th>Points</th><th>Flags</th><th>Created (admin)</th></tr>${matchDetailRows}</table></div>
+  </div>
+  <div class="card"><h2>Admin settings</h2>
+    <label class="inline"><input type="checkbox" id="pinToggle" ${me.admin_pin_enabled?'checked':''}> Require PIN to open Admin tab</label>
+    <label>Change admin PIN (4 digits — leave blank to keep the current one; default is 1234)</label>
+    <input id="newPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="max-width:140px">
+    <h3>Free-play limit (validation for later)</h3>
+    <label class="inline"><input type="checkbox" id="flToggle" ${cfg.free_limit_enabled?'checked':''}> Limit free play — each player gets a set number of free matches, then must be marked “Subscribed”</label>
+    <label>Free matches per player</label>
+    <input id="flCount" type="number" min="1" max="1000" value="${cfg.free_match_limit}" style="max-width:140px">
+    <p class="muted">Off by default, so everyone plays free. When switched on, the database blocks a new challenge or recorded match if any player in it has used up their free matches and isn't ticked “Subscribed” under Manage players (admins are exempt). Declined challenges don't count.</p>
+    <div class="error" id="cfg_err"></div>
+    <button class="btn" id="saveCfg" style="margin-top:10px">Save settings</button>
+  </div>
+  <div class="card"><h2>Games</h2>
+    <p class="muted">Everyone can add games from the app. Hide a game to remove it from the pickers without losing its history; delete only works for games with no matches.</p>
+    <div class="table-scroll"><table><tr><th>Game</th><th>Doubles</th><th>Matches</th><th>Status</th><th>Actions</th></tr>
+    ${adminGames.map(g=>`<tr><td>${esc(g.emoji)} ${esc(g.name)}</td><td>${g.supports_doubles?'✓':'—'}</td><td>${gameMatchCount[g.id]||0}</td><td>${g.is_active?'<span class="badge ok">Active</span>':'<span class="badge muted">Hidden</span>'}</td>
+      <td><button class="btn ghost" onclick="editGame('${g.id}')">✏️ Edit</button> <button class="btn danger" onclick="deleteGame(this,'${g.id}')">🗑️ Delete</button></td></tr>`).join('')}
+    </table></div>
+    <div class="row" style="margin-top:10px;align-items:flex-end">
+      <div><label>New game name</label><input id="ng_name" maxlength="40"></div>
+      <div style="flex:0 0 90px;min-width:90px"><label>Emoji</label><input id="ng_emoji" maxlength="4"></div>
+      <div style="flex:0 0 auto;min-width:0"><label class="inline"><input type="checkbox" id="ng_dbl" checked> Doubles</label></div>
+      <div style="flex:0 0 auto;min-width:0"><button class="btn" id="ng_go">Add</button></div>
+    </div>
+    <div class="error" id="ng_err"></div>
+  </div>
+  <div class="card"><h2>Add a new player</h2>
+    <div class="row">
+      <div><label>Name</label><input id="nu_name" maxlength="40"></div>
+      <div><label>Email</label><input id="nu_email" type="email"></div>
+    </div>
+    <div class="row">
+      <div><label>Temp password</label><input id="nu_pw" type="password" autocomplete="new-password"></div>
+      <div><label>Age</label><input id="nu_age" type="number"></div>
+    </div>
+    <div class="row">
+      <div><label>Country</label><select id="nu_country">${countryOptions('', 'Select country…')}</select></div>
+      <div><label>City / club (optional)</label><input id="nu_city" maxlength="60"></div>
+    </div>
+    <div class="error" id="nu_err"></div>
+    <button class="btn" id="nu_go" style="margin-top:10px">Add player</button>
+  </div>
+  <div class="card"><h2>Manage players</h2>
+    <label>Search (name, country, city or email) — ${totalPlayers} registered; showing up to 100</label>
+    <input id="playerSearch" placeholder="Start typing to search...">
+    <div id="playersList" style="margin-top:10px"></div>
+  </div>
+  <div class="card"><h2>Manually enter a match result</h2>
+    <p class="muted">For recording a match directly — historical results, or games played outside the app. This applies points immediately; no opponent acceptance needed. The same monthly limits still apply.</p>
+    <label>Game</label>
+    <select id="am_game">${activeGames.map(g=>`<option value="${g.id}" ${defGame&&g.id===defGame.id?'selected':''}>${esc(g.emoji)} ${esc(g.name)}</option>`).join('')}</select>
+    <label>Match type</label>
+    <select id="am_type"><option value="singles">Singles</option><option value="doubles">Doubles</option></select>
+    <div class="row">
+      <div>${pickerHtml('am_a','Side A player')}</div>
+      <div id="am_a_partner_box" class="hidden">${pickerHtml('am_a_partner','Side A partner')}</div>
+    </div>
+    <div class="row">
+      <div>${pickerHtml('am_b','Side B player')}</div>
+      <div id="am_b_partner_box" class="hidden">${pickerHtml('am_b_partner','Side B partner')}</div>
+    </div>
+    <label>Winner</label>
+    <select id="am_winner"><option value="challenger">Side A</option><option value="opponent">Side B</option></select>
+    <label>Date &amp; time played (required)</label>
+    <input type="datetime-local" id="am_when">
+    <label>Venue (required)</label>
+    <input id="am_venue" maxlength="120" placeholder="Any place name">
+    <button class="btn" id="am_submit" style="margin-top:12px">Record match</button>
+    <div class="error" id="am_err"></div>
+  </div>
+  <div class="card"><h2>Manage matches</h2>
+    <p class="muted">Latest 60 by played date. Deleting a match removes its challenge and any result record. It does <b>not</b> reverse points already applied.</p>
+    <div class="table-scroll"><table><tr><th>Game</th><th>Played</th><th>Side A</th><th>Side B</th><th>Type</th><th>Status</th><th>Result</th><th>Created (admin)</th><th>Actions</th></tr>${matchRowsAdmin}</table></div>
+  </div>
+  <div class="card"><h2>Singles match history</h2>
+    <div class="table-scroll"><table><tr><th>Game</th><th>Played</th><th>Player 1</th><th>Player 2</th><th>Winner</th><th>Points</th></tr>${historyRows('singles')}</table></div>
+  </div>
+  <div class="card"><h2>Doubles match history</h2>
+    <div class="table-scroll"><table><tr><th>Game</th><th>Played</th><th>Team 1</th><th>Team 2</th><th>Winner</th><th>Points</th></tr>${historyRows('doubles')}</table></div>
+  </div>
+  <div class="card"><h2>Inactivity notes</h2>
+    ${(notes.data||[]).map(n=>`<p><b>${esc(n.sttl2_players?.name||'')}</b>: ${esc(n.reason)} <span class="muted">(${fmtDate(n.created_at)})</span></p>`).join('')||'<p class="muted">None.</p>'}
+  </div>`;
+
+  // ----- settings
+  document.getElementById('saveCfg').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('cfg_err');
+    err.style.color='var(--warn)'; err.textContent='';
+    const pinToggle=document.getElementById('pinToggle').checked;
+    const newPin=document.getElementById('newPin').value.trim();
+    const flOn=document.getElementById('flToggle').checked;
+    const flN=parseInt(document.getElementById('flCount').value,10);
+    if(newPin && !/^\d{4}$/.test(newPin)){ err.textContent='The PIN must be exactly 4 digits.'; return; }
+    if(!(flN>=1)){ err.textContent='Free matches per player must be 1 or more.'; return; }
+    setLoading(btn,true,'Saving...');
+    const upd = {admin_pin_enabled:pinToggle}; if(newPin) upd.admin_pin=newPin;
+    const r1 = await sb.from('sttl2_player_private').update(upd).eq('id',me.id);
+    const r2 = await sb.from('sttl2_app_config').update({free_limit_enabled:flOn, free_match_limit:flN}).eq('id',1);
+    if(r1.error||r2.error){ setLoading(btn,false); err.textContent=(r1.error||r2.error).message; return; }
+    me.admin_pin_enabled=pinToggle; await loadConfig(); updateWhoBar();
+    adminOpenSections.add('Admin settings');
+    renderAdmin();
+  };
+  // ----- games
+  document.getElementById('ng_go').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('ng_err'); err.textContent='';
+    setLoading(btn,true,'Adding...');
+    const r = await createGame(document.getElementById('ng_name').value, document.getElementById('ng_emoji').value, document.getElementById('ng_dbl').checked, me.id);
+    if(r.error){ setLoading(btn,false); err.textContent=r.error; return; }
+    adminOpenSections.add('Games'); renderAdmin();
+  };
+  // ----- add player
+  document.getElementById('nu_go').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('nu_err');
+    err.style.color='var(--warn)'; err.textContent='';
+    const name=document.getElementById('nu_name').value.trim();
+    const email=document.getElementById('nu_email').value.trim();
+    const password=document.getElementById('nu_pw').value;
+    const age=parseInt(document.getElementById('nu_age').value,10);
+    const country=document.getElementById('nu_country').value;
+    const city=document.getElementById('nu_city').value.trim();
+    if(!name||!email||!pwOk(password)||!age||!country){ err.textContent='Fill all fields (country too); the password needs upper/lower/number/special, 8+ chars.'; return; }
+    const nameErr = await validateName(name, email);
+    if(nameErr){ err.textContent = nameErr; return; }
+    setLoading(btn,true,'Adding...');
+    const {data:cd, error:ce} = await getSbAdmin().auth.signUp({email,password});
+    if(ce){ setLoading(btn,false); err.textContent = ce.message; return; }
+    const newId = cd.user?.id;
+    if(!newId || (cd.user.identities && cd.user.identities.length===0)){ setLoading(btn,false); err.textContent='Could not create the account — that email may already be registered (they can simply log in and finish their profile).'; return; }
+    let r = await sb.from('sttl2_players').insert({id:newId,name,country,city:city||null});
+    if(r.error){ setLoading(btn,false); err.textContent = r.error.message; return; }
+    r = await sb.from('sttl2_player_private').insert({id:newId,email,age});
+    if(r.error){ setLoading(btn,false); err.textContent = r.error.message; return; }
+    adminOpenSections.add('Add a new player'); adminOpenSections.add('Manage players');
+    renderAdmin();
+  };
+  // ----- manage players
+  function playerRowHtml(p){
+    const pv = pvOf(p);
+    return `<div class="player-item">
+      <div class="player-item-head">
+        <div>${avatarHtml(p,24)}<b>${esc(p.name)}</b>${p.is_admin?' <span class="tag">admin</span>':''}</div>
+        <div class="muted" style="font-size:12px">✉️ ${esc(pv.email)||'—'}</div>
+      </div>
+      <div class="player-item-meta">
+        <span>🌍 ${esc(p.country||'— no country —')}${p.city?' · '+esc(p.city):''}</span>
+        <span>🎂 ${pv.age||'—'}</span>
+        <span>🕒 ${fmtDateTime(p.last_login_at)}</span>
+      </div>
+      <div class="player-item-meta">
+        ${p.is_approved?'<span class="badge ok">✅ Active</span>':'<span class="badge warn">⏸ Paused</span>'}
+        <label class="inline" style="margin:0;font-size:13px;cursor:pointer">
+          <input type="checkbox" ${p.is_subscribed?'checked':''} onchange="toggleSubscription(this,'${p.id}')"> 💳 Subscribed
+        </label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        ${p.is_approved?`<button class="btn ghost" onclick="setActive(this,'${p.id}',false)">⏸ Pause</button>`:`<button class="btn" onclick="setActive(this,'${p.id}',true)">▶ Reactivate</button>`}
+        <button class="btn ghost" onclick="editUser('${p.id}')">✏️ Edit</button>
+        <button class="btn danger" onclick="deleteUser(this,'${p.id}')">🗑️ Remove</button>
+      </div>
+    </div>`;
+  }
+  const renderPlayerRows = list => {
+    document.getElementById('playersList').innerHTML = list.length ? list.map(playerRowHtml).join('') : '<p class="muted">No players match your search.</p>';
+  };
+  renderPlayerRows(adminPlayerList);
+  let searchTimer=null;
+  document.getElementById('playerSearch').oninput = (e)=>{
+    clearTimeout(searchTimer);
+    const q=e.target.value;
+    searchTimer=setTimeout(async ()=>{ adminPlayerList = await adminFetchPlayers(q); renderPlayerRows(adminPlayerList); }, 300);
+  };
+  // ----- manual match entry
+  const amList = approvedPlayers;
+  const updAm = ()=>{
+    const dbl = document.getElementById('am_type').value==='doubles';
+    let a=pickedName('am_a')||'Side A', b=pickedName('am_b')||'Side B';
+    if(dbl){ const pa=pickedName('am_a_partner'), pb=pickedName('am_b_partner'); if(pa) a+=' & '+pa; if(pb) b+=' & '+pb; }
+    const w=document.getElementById('am_winner'); w.options[0].textContent=a; w.options[1].textContent=b;
+  };
+  ['am_a','am_a_partner','am_b','am_b_partner'].forEach(id=>wirePicker(id, amList, null, updAm));
+  const syncAmType = ()=>{
+    const g = adminGames.find(x=>x.id===document.getElementById('am_game').value);
+    const typeSel = document.getElementById('am_type');
+    const dblOpt = [...typeSel.options].find(o=>o.value==='doubles');
+    if(g && !g.supports_doubles){ if(typeSel.value==='doubles') typeSel.value='singles'; dblOpt.disabled=true; dblOpt.textContent='Doubles (not available for this game)'; }
+    else if(dblOpt){ dblOpt.disabled=false; dblOpt.textContent='Doubles'; }
+    const dbl = typeSel.value==='doubles';
+    document.getElementById('am_a_partner_box').classList.toggle('hidden', !dbl);
+    document.getElementById('am_b_partner_box').classList.toggle('hidden', !dbl);
+    updAm();
+  };
+  document.getElementById('am_game').onchange = syncAmType;
+  document.getElementById('am_type').onchange = syncAmType;
+  syncAmType();
+  const applyMdFilter = ()=>{
+    const q=(document.getElementById('mdFilter').value||'').trim().toLowerCase();
+    const fo=document.getElementById('mdFlagged').checked;
+    document.querySelectorAll('tr.md-row').forEach(tr=>{
+      const okText = !q || (tr.dataset.text||'').includes(q);
+      const okFlag = !fo || tr.dataset.flagged==='1';
+      tr.classList.toggle('hidden', !(okText && okFlag));
+    });
+  };
+  document.getElementById('mdFilter').oninput = applyMdFilter;
+  document.getElementById('mdFlagged').onchange = applyMdFilter;
+  document.getElementById('am_when').max = localInputValue(new Date());
+  document.getElementById('am_submit').onclick = async (e)=>{
+    const btn=e.currentTarget, err=document.getElementById('am_err'); err.textContent='';
+    const game=document.getElementById('am_game').value;
+    const match_type=document.getElementById('am_type').value;
+    const dbl = match_type==='doubles';
+    const pA=document.getElementById('am_a').value, pB=document.getElementById('am_b').value;
+    const pAP = dbl ? document.getElementById('am_a_partner').value : null;
+    const pBP = dbl ? document.getElementById('am_b_partner').value : null;
+    const winner=document.getElementById('am_winner').value;
+    const whenVal=document.getElementById('am_when').value;
+    const venue=document.getElementById('am_venue').value.trim();
+    const chk=validatePlayWhenVenue(whenVal, venue, 'played');
+    if(chk){ err.textContent=chk; return; }
+    const ids = dbl ? [pA,pB,pAP,pBP] : [pA,pB];
+    if(ids.some(x=>!x) || new Set(ids).size!==ids.length){ err.textContent = dbl ? 'Each of the four players in a doubles match must be different.' : 'Side A and Side B must be different players.'; return; }
+    setLoading(btn,true,'Recording...');
+    const {error} = await sb.rpc('sttl2_admin_record_match', {
+      p_game:game, p_challenger:pA, p_challenger_partner:pAP, p_opponent:pB, p_opponent_partner:pBP,
+      p_match_type:match_type, p_winner_side:winner, p_venue:venue, p_scheduled_at:new Date(whenVal).toISOString()
+    });
+    setLoading(btn,false);
+    if(error){ alert('Could not record match: '+error.message); return; }
+    adminOpenSections.add('Manually enter a match result');
+    renderAdmin();
+  };
+  makeCollapsible(app);
+}
+
+window.toggleSubscription = async (checkbox,id)=>{
+  const newVal = checkbox.checked;
+  checkbox.disabled = true;
+  const {error} = await sb.from('sttl2_players').update({is_subscribed:newVal}).eq('id',id);
+  checkbox.disabled = false;
+  if(error){ alert('Could not update subscription: '+error.message); checkbox.checked = !newVal; }
+};
+window.setActive = async (btn,id,active)=>{
+  if(!active && id===me.id){ alert("You can't pause your own account."); return; }
+  setLoading(btn,true,'Saving...');
+  const {error} = await sb.from('sttl2_players').update({is_approved:active}).eq('id',id);
+  if(error){ setLoading(btn,false); alert(error.message); return; }
+  adminOpenSections.add('Manage players'); renderAdmin();
+};
+window.adminApproveResult = async (btn,resultId)=>{
+  if(!confirm("Approve this result on the opponent's behalf? This updates the players' ratings.")) return;
+  setLoading(btn,true,'Approving...');
+  const {error} = await sb.rpc('sttl2_admin_approve_result', {p_result_id: resultId});
+  setLoading(btn,false);
+  if(error){ alert('Could not approve: '+error.message); return; }
+  adminOpenSections.add('Manage matches'); renderAdmin();
+};
+window.deleteMatch = async (btn,challengeId)=>{
+  if(!confirm('Delete this match? This removes the challenge and any recorded result.\nIt will NOT reverse rating points already applied.')) return;
+  setLoading(btn,true,'Deleting...');
+  const {error} = await sb.from('sttl2_challenges').delete().eq('id',challengeId);
+  setLoading(btn,false);
+  if(error){ alert('Could not delete match: '+error.message); return; }
+  adminOpenSections.add('Manage matches'); renderAdmin();
+};
+window.deleteUser = async (btn,id)=>{
+  if(id===me.id){ alert("You can't remove your own account."); return; }
+  if(!confirm('Remove this player?\n\nThis deletes their profile, ratings and match links. Their login will still exist in Supabase Auth — remove it there too if you want them fully gone.')) return;
+  setLoading(btn,true,'Removing...');
+  const {error} = await sb.from('sttl2_players').delete().eq('id',id);
+  if(error){ setLoading(btn,false); alert('Could not remove player: '+error.message); return; }
+  adminOpenSections.add('Manage players'); renderAdmin();
+};
+window.editUser = async (id)=>{
+  const p = adminPlayerList.find(x=>x.id===id) || allPlayers.find(x=>x.id===id);
+  if(!p) return;
+  const pv = pvOf(p);
+  modal(`<h2>Edit ${esc(p.name)}</h2>
+    <label>Name</label><input id="e_name" maxlength="40" value="${esc(p.name)}">
+    <label>Age</label><input id="e_age" type="number" value="${pv.age||''}">
+    <label>Country</label><select id="e_country">${countryOptions(p.country||'', 'Select country…')}</select>
+    <label>City / club</label><input id="e_city" maxlength="60" value="${esc(p.city||'')}">
+    <label class="inline"><input type="checkbox" id="e_sub" ${p.is_subscribed?'checked':''}> Subscribed</label>
+    <label class="inline"><input type="checkbox" id="e_admin" ${p.is_admin?'checked':''}> Admin</label>
+    <div class="error" id="e_err"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" onclick="saveEdit(this,'${id}')">Save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveEdit = async (btn,id)=>{
+  const err=document.getElementById('e_err'); err.textContent='';
+  const email = pvOf(adminPlayerList.find(x=>x.id===id)||{}).email || '';
+  const name=document.getElementById('e_name').value.trim();
+  const age=parseInt(document.getElementById('e_age').value,10);
+  const country=document.getElementById('e_country').value;
+  if(!name||!age||!country){ err.textContent='Name, age and country are required.'; return; }
+  if(id===me.id && !document.getElementById('e_admin').checked){ err.textContent="You can't remove your own admin rights."; return; }
+  const nameErr = await validateName(name, email, id);
+  if(nameErr){ err.textContent = nameErr; return; }
+  setLoading(btn,true,'Saving...');
+  const r1 = await sb.from('sttl2_players').update({name, country, city:document.getElementById('e_city').value.trim()||null,
+    is_subscribed:document.getElementById('e_sub').checked, is_admin:document.getElementById('e_admin').checked}).eq('id',id);
+  const r2 = await sb.from('sttl2_player_private').update({age}).eq('id',id);
+  if(r1.error||r2.error){ setLoading(btn,false); err.textContent=(r1.error||r2.error).message; return; }
+  closeModal(); adminOpenSections.add('Manage players'); renderAdmin();
+};
+window.editGame = (id)=>{
+  const g = adminGames.find(x=>x.id===id); if(!g) return;
+  modal(`<h2>Edit game</h2>
+    <label>Name</label><input id="eg_name" maxlength="40" value="${esc(g.name)}">
+    <label>Emoji</label><input id="eg_emoji" maxlength="4" value="${esc(g.emoji)}">
+    <label class="inline"><input type="checkbox" id="eg_dbl" ${g.supports_doubles?'checked':''}> Can be played as doubles</label>
+    <label class="inline"><input type="checkbox" id="eg_active" ${g.is_active?'checked':''}> Active (untick to hide from pickers)</label>
+    <div class="error" id="eg_err"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" onclick="saveGame(this,'${id}')">Save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveGame = async (btn,id)=>{
+  const err=document.getElementById('eg_err'); err.textContent='';
+  setLoading(btn,true,'Saving...');
+  const {error} = await sb.from('sttl2_games').update({
+    name:document.getElementById('eg_name').value, emoji:document.getElementById('eg_emoji').value,
+    supports_doubles:document.getElementById('eg_dbl').checked, is_active:document.getElementById('eg_active').checked}).eq('id',id);
+  if(error){ setLoading(btn,false); err.textContent=error.message; return; }
+  closeModal(); adminOpenSections.add('Games'); renderAdmin();
+};
+window.deleteGame = async (btn,id)=>{
+  const g = adminGames.find(x=>x.id===id);
+  if(!confirm(`Delete ${g?g.name:'this game'}? This only works if no matches were ever played in it (otherwise hide it instead). Ratings for it are removed.`)) return;
+  setLoading(btn,true,'Deleting...');
+  const {error} = await sb.from('sttl2_games').delete().eq('id',id);
+  if(error){ setLoading(btn,false); alert(/foreign key|violates/i.test(error.message) ? 'This game has matches, so it cannot be deleted. Edit it and untick “Active” to hide it instead.' : error.message); return; }
+  adminOpenSections.add('Games'); renderAdmin();
+};
+
+// ---------- INIT ----------
+(async ()=>{
+  try{ await loadGames(); }catch(e){}
+  const {data:{session:s}} = await sb.auth.getSession();
+  if(s){ session=s; await loadMeAndBoot(); } else { renderLogin(); }
+})();
+</script>
+</body>
+</html>
