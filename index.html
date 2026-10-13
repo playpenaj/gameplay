@@ -1197,15 +1197,16 @@ async function monthlyLimitMessage(g, opponentId, matchType, whenVal){
   const base = whenVal ? new Date(whenVal) : new Date();
   const monthStart=new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1)).toISOString();
   const nextStart=new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth()+1, 1)).toISOString();
-  const {data:mine}=await sb.from('sttl2_challenges').select('id,match_type,challenger_id,opponent_id')
+  const {data:mine}=await sb.from('sttl2_challenges').select('id,match_type,scheduled_at,challenger_id,opponent_id')
     .eq('game_id',g.id).neq('status','declined')
     .gte('scheduled_at', monthStart).lt('scheduled_at', nextStart)
     .or(`challenger_id.eq.${me.id},opponent_id.eq.${me.id},challenger_partner_id.eq.${me.id},opponent_partner_id.eq.${me.id}`);
   const rows=mine||[];
   if(rows.length>=10) return `You have reached the limit of 10 ${g.name} matches in that calendar month.`;
   if(matchType!=='doubles'){
-    const dup=rows.some(r=>r.match_type!=='doubles' && ((r.challenger_id===me.id&&r.opponent_id===opponentId)||(r.challenger_id===opponentId&&r.opponent_id===me.id)));
-    if(dup) return `You have already played this player in ${g.name} singles that calendar month. The same matchup is limited to once a month.`;
+    const dayKey=d=>new Date(d).toISOString().slice(0,10);
+    const dup=rows.some(r=>r.match_type!=='doubles' && dayKey(r.scheduled_at)===dayKey(base) && ((r.challenger_id===me.id&&r.opponent_id===opponentId)||(r.challenger_id===opponentId&&r.opponent_id===me.id)));
+    if(dup) return `You have already played this player in ${g.name} singles on that day. The same matchup is limited to once a day (and 10 matches a month).`;
   }
   return null;
 }
@@ -1434,7 +1435,7 @@ function renderInfo(){
     <p>Doubles uses each <b>team's average rating</b>. Both partners on the winning team gain the same number of points, and both on the losing team lose that same number.</p>
     <p class="muted">Example: Team A averages 1050 and Team B averages 1250. If Team A pulls off the upset, both Team A players gain 24 points and both Team B players lose 24. If Team B wins as expected, everyone moves 8.</p>
     <h2>Match limits</h2>
-    <p>For each game, <b>the exact same matchup</b> (same players for singles, or the same four players in the same teams for doubles) can be played <b>once per calendar month</b>, and each player can play at most <b>10 matches per calendar month</b> in that game. Both limits reset on the 1st of each month (UTC).</p>
+    <p>For each game, <b>the exact same matchup</b> (same players for singles, or the same four players in the same teams for doubles) can be played <b>once per day</b>, and each player can play at most <b>10 matches per calendar month</b> in that game. Both limits reset on the 1st of each month (UTC).</p>
     <h2>Date, time and venue</h2>
     <p>Every match needs a <b>date &amp; time</b> and a <b>venue</b>. A match that has already been played can't be dated in the future. Leaderboards and monthly limits use the date the match was <b>played</b>.</p>
     <h2>Most-played leaderboards</h2>
@@ -1750,16 +1751,29 @@ async function renderAdmin(){
     const nameErr = await validateName(name, email);
     if(nameErr){ err.textContent = nameErr; return; }
     setLoading(btn,true,'Adding...');
+    let newId=null;
     const {data:cd, error:ce} = await getSbAdmin().auth.signUp({email,password});
-    if(ce){ setLoading(btn,false); err.textContent = ce.message; return; }
-    const newId = cd.user?.id;
-    if(!newId || (cd.user.identities && cd.user.identities.length===0)){ setLoading(btn,false); err.textContent='Could not create the account — that email may already be registered (they can simply log in and finish their profile).'; return; }
+    const alreadyReg = !!ce && /already/i.test(ce.message||'');
+    if(ce && !alreadyReg){ setLoading(btn,false); err.textContent = ce.message; return; }
+    if(!ce && cd.user && !(cd.user.identities && cd.user.identities.length===0)){ newId = cd.user.id; }
+    else {
+      // The email already has a login (maybe an earlier attempt made it but not the profile): recover with the typed password.
+      const {data:si, error:siErr} = await getSbAdmin().auth.signInWithPassword({email,password});
+      if(siErr || !si?.user){ setLoading(btn,false); err.textContent='That email already has a login and the password typed does not match it, so the profile cannot be attached. Use the password they registered with, or ask them to log in and finish their profile.'; return; }
+      newId = si.user.id;
+      try{ await getSbAdmin().auth.signOut(); }catch(_){}
+    }
+    const {data:ex} = await sb.from('sttl2_players').select('id').eq('id',newId).maybeSingle();
+    if(ex){ setLoading(btn,false); err.textContent='That player already exists in the list below.'; return; }
     let r = await sb.from('sttl2_players').insert({id:newId,name,country,city:city||null});
     if(r.error){ setLoading(btn,false); err.textContent = r.error.message; return; }
     r = await sb.from('sttl2_player_private').insert({id:newId,email,age});
     if(r.error){ setLoading(btn,false); err.textContent = r.error.message; return; }
     adminOpenSections.add('Add a new player'); adminOpenSections.add('Manage players');
-    renderAdmin();
+    await renderAdmin();
+    const e2=document.getElementById('nu_err');
+    if(e2){ e2.style.color='var(--ok)'; e2.textContent='Player added — they are at the top of the list below (they may need to confirm their email before logging in).'; }
+    const pl=document.getElementById('playersList'); if(pl && pl.firstElementChild) pl.firstElementChild.style.outline='2px solid var(--ok)';
   };
   // ----- manage players
   function playerRowHtml(p){
