@@ -226,14 +226,22 @@ async function validateName(name, email, excludeId){
   if(clash) return 'That name is already taken by another player — please choose a different display name.';
   return null;
 }
-// mode 'challenge' = a future/near-future arrangement; 'played' = already played.
+// Dates default to now and can be changed to an earlier time, never a future one.
+// Date/time boxes: default to the current time, can be moved earlier, never later than now.
+function initNowInputs(ids){
+  ids.forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const refresh=()=>{ el.max=localInputValue(new Date()); };
+    refresh(); el.value=localInputValue(new Date());
+    el.addEventListener('focus',refresh); el.addEventListener('click',refresh);
+  });
+}
 function validatePlayWhenVenue(whenVal, venue, mode){
-  if(!whenVal) return mode==='played' ? 'Please enter the date and time the match was played.' : 'Please choose the date and time you want to play.';
+  if(!whenVal) return mode==='played' ? 'Please enter the date and time the match was played.' : 'Please enter the date and time of the match.';
   const t=new Date(whenVal).getTime();
   if(isNaN(t)) return 'That date and time is not valid.';
   if(!venue) return 'Please type the venue (any place name is fine).';
-  if(mode==='played' && t > Date.now()+10*60*1000) return 'A match that has already been played cannot have a date in the future.';
-  if(mode==='challenge' && t < Date.now()-60*60*1000) return 'The date and time cannot be more than an hour in the past.';
+  if(t > Date.now()+2*60*1000) return 'The date and time cannot be in the future — use now or an earlier time.';
   return '';
 }
 function canPlay(p){ return !!p && p.is_approved !== false; }
@@ -1168,7 +1176,7 @@ async function renderPlay(){
     <label>Winner</label>
     <select id="qr_winner"><option value="me">Me</option><option value="opp">Opponent</option></select>
     ${scoreFieldsHtml('qr','My score','Opponent score',g.id)}
-    <label>Date &amp; time played (required)</label>
+    <label>Date &amp; time played (defaults to now; no future dates)</label>
     <input type="datetime-local" id="qr_when">
     <label>Venue (required — any place name)</label>
     <input id="qr_venue" maxlength="120" placeholder="e.g. Bishan CC, Joe's garage, online">
@@ -1187,7 +1195,7 @@ async function renderPlay(){
       ${pickerHtml('myPartner','Your partner')}
       ${pickerHtml('oppPartner',"Opponent's partner")}
     </div>
-    <label>Date &amp; time you want to play (required)</label>
+    <label>Date &amp; time (defaults to now — change it if earlier; no future dates)</label>
     <input type="datetime-local" id="whenPlay">
     <label>Venue (required — any place name)</label>
     <input id="venue" maxlength="120" placeholder="e.g. Bishan CC, Joe's garage, online">
@@ -1230,8 +1238,7 @@ async function renderPlay(){
     document.getElementById('partnerBox').classList.toggle('hidden', e.target.value!=='doubles');
   };
   updQr();
-  document.getElementById('whenPlay').min = localInputValue(new Date(Date.now()-60*60*1000));
-  document.getElementById('qr_when').max = localInputValue(new Date());
+  initNowInputs(['whenPlay','qr_when']);
 
   const distinctCheck = (ids)=>{
     const s=ids.filter(Boolean);
@@ -1559,7 +1566,7 @@ function renderInfo(){
     <h2>Match limits</h2>
     <p>For each game, <b>the exact same matchup</b> (same players for singles, or the same four players in the same teams for doubles) can be played <b>once per day</b>, and each player can play at most <b>10 matches per calendar month</b> in that game. Both limits reset on the 1st of each month (UTC).</p>
     <h2>Date, time and venue</h2>
-    <p>Every match needs a <b>date &amp; time</b> and a <b>venue</b>. A match that has already been played can't be dated in the future. Leaderboards and monthly limits use the date the match was <b>played</b>.</p>
+    <p>Every match needs a <b>date &amp; time</b> and a <b>venue</b>. The date and time default to now; you can change them to an earlier time but never to a future one. Leaderboards and monthly limits use the date the match was <b>played</b>.</p>
     <h2>Most-played leaderboards</h2>
     <p>Besides points, each game has a <b>Most Played</b> board for <b>this month</b>, <b>last month</b> and <b>overall</b>. The player with the most matches played comes first. Ties are broken by: 1️⃣ most wins, 2️⃣ higher points, 3️⃣ name A–Z. A fresh monthly board starts on the 1st.</p>
     <h2>When a result is waiting for acceptance</h2>
@@ -1824,7 +1831,7 @@ async function renderAdmin(){
     <select id="am_winner"><option value="challenger">Side A</option><option value="opponent">Side B</option></select>
     ${scoreFieldsHtml('am','Side A score','Side B score',null)}
     <p class="muted" style="margin-top:0">Scores are used only by games on a margin-based or DUPR-style rating (and ignored for the others).</p>
-    <label>Date &amp; time played (required)</label>
+    <label>Date &amp; time played (defaults to now; no future dates)</label>
     <input type="datetime-local" id="am_when">
     <label>Venue (required)</label>
     <input id="am_venue" maxlength="120" placeholder="Any place name">
@@ -1981,7 +1988,7 @@ async function renderAdmin(){
   };
   document.getElementById('mdFilter').oninput = applyMdFilter;
   document.getElementById('mdFlagged').onchange = applyMdFilter;
-  document.getElementById('am_when').max = localInputValue(new Date());
+  initNowInputs(['am_when']);
   document.getElementById('am_submit').onclick = async (e)=>{
     const btn=e.currentTarget, err=document.getElementById('am_err'); err.textContent='';
     const game=document.getElementById('am_game').value;
