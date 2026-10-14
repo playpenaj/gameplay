@@ -153,7 +153,8 @@ details.sport .inner{padding:0 12px 12px}
 <footer>STTL2 · Play any game, anywhere</footer>
 
 <script>
-// ===== STTL2 has its OWN Supabase project (separate logins and data from STTL). =====
+// ===== This copy uses the SAME Supabase project as STTL (shared logins; STTL2 data lives in sttl2_* tables).
+// (For a separate project use sttl2app_new_project.html.) =====
 // Paste the Project URL and the anon/public key of the STTL2 project here
 // (Supabase → Project Settings → API). Never paste the service_role key.
 const SUPABASE_URL = "https://gdvbplbqehrtrgiwwcja.supabase.co";
@@ -550,8 +551,15 @@ async function renderSignup(){
     let uid=null;
     if(alreadyExists){
       // The login exists (e.g. an earlier attempt created it but not the profile): try the password they typed.
-      const {data:sd, error:se} = await sb.auth.signInWithPassword({email,password:pw});
-      if(se){ setLoading(btn,false); err.innerHTML='This email already has an STTL2 login. Type the password you registered with, or use <a class=\"link\" id=\"su_fp\">Forgot password</a>.'; const l=document.getElementById('su_fp'); if(l) l.onclick=renderForgot; return; }
+      let sd = null;
+      { const r0 = await sb.auth.signInWithPassword({email,password:pw}); if(!r0.error) sd = r0.data; }
+      if(!sd){
+        // Email is already registered: no e-mail is sent — just ask for the password that account already uses.
+        setLoading(btn,false);
+        sd = await askExistingPassword(email);
+        if(!sd){ err.textContent='Registration cancelled — that email is already registered. Log in with its existing password instead.'; return; }
+        setLoading(btn,true,'Registering...');
+      }
       session = sd.session; uid = sd.user.id;
       const {data:ex} = await sb.from('sttl2_players').select('id').eq('id',uid).maybeSingle();
       if(ex){ await loadMeAndBoot(); return; }
@@ -574,6 +582,30 @@ async function renderSignup(){
     showJustRegisteredNotice();
     await loadMeAndBoot();
   };
+}
+
+// The email is already registered: confirm it by asking for that account's existing password.
+function askExistingPassword(email){
+  return new Promise(resolve=>{
+    let tries = 0;
+    modal(`<h2>This email is already registered</h2>
+      <p>Enter the password you already use for <b>${esc(email)}</b> to join STTL2 with the same login.</p>
+      <label>Your existing password</label><input id="ex_pw" type="password" autocomplete="current-password">
+      <div class="error" id="ex_err"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="ex_go">Continue</button><button class="btn ghost" id="ex_cancel">Cancel</button></div>`);
+    const go = async ()=>{
+      const pw = document.getElementById('ex_pw').value;
+      if(!pw){ document.getElementById('ex_err').textContent='Please enter your password.'; return; }
+      const r = await sb.auth.signInWithPassword({email,password:pw});
+      if(!r.error){ closeModal(); resolve(r.data); return; }
+      tries++;
+      if(tries>=5){ closeModal(); resolve(null); return; }
+      document.getElementById('ex_err').textContent='That password is not correct. Please try again.';
+    };
+    document.getElementById('ex_go').onclick = go;
+    document.getElementById('ex_pw').onkeydown = e=>{ if(e.key==='Enter') go(); };
+    document.getElementById('ex_cancel').onclick = ()=>{ closeModal(); resolve(null); };
+  });
 }
 
 // Creates (or completes) the player profile + the chosen games.
@@ -600,9 +632,9 @@ async function renderForgot(){
   app.innerHTML = `
   <div class="card" style="max-width:440px;margin:30px auto">
     <h2>Forgot password</h2>
-    <p class="muted">${detailResetOn ? 'No email is sent for this option. Verify your details first, then set a new password right here.' : 'Type your email and we will send you a reset link.'}</p>
-    <label>Email</label><input id="fp_email" type="email">
+    <p class="muted">${detailResetOn ? 'No email is sent for this option. Verify your details first, then set a new password right here.' : 'Password reset by details is switched off. Please ask an admin to help you.'}</p>
     <div class="${detailResetOn?'':'hidden'}">
+    <label>Email</label><input id="fp_email" type="email">
     <label>Age</label><input id="fp_age" type="number">
     <label>Country</label>
     <select id="fp_country">${countryOptions('', 'Select your country…')}</select>
@@ -612,10 +644,6 @@ async function renderForgot(){
       <button class="btn ghost" id="fp_back">Back</button>
     </div></div>
     ${detailResetOn?'':'<div class="row" style="margin-top:6px"><button class="btn ghost" id="fp_back2">Back</button></div>'}
-    <hr style="margin:18px 0;border:0;border-top:1px solid var(--line)">
-    <p class="muted"><b>Can't verify above?</b> Type your email in the first box and we'll email you a reset link.</p>
-    <button class="btn ghost" id="fp_link">✉️ Email me a reset link</button>
-    <div class="error" id="fp_link_msg"></div>
     <div id="fp_pw_section" class="hidden">
       <label>New password</label><input id="fp_pw" type="password" autocomplete="new-password">
       <div class="muted">Min 10 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.</div>
@@ -626,18 +654,6 @@ async function renderForgot(){
   </div>`;
   document.getElementById('fp_back').onclick = renderLogin;
   { const b2=document.getElementById('fp_back2'); if(b2) b2.onclick = renderLogin; }
-  document.getElementById('fp_link').onclick = async (e)=>{
-    const btn=e.currentTarget, m=document.getElementById('fp_link_msg');
-    const email=document.getElementById('fp_email').value.trim();
-    m.style.color='var(--warn)';
-    if(!email){ m.textContent='Type your email in the Email box first.'; return; }
-    setLoading(btn,true,'Sending...');
-    const {error} = await sb.auth.resetPasswordForEmail(email,{redirectTo: location.href.split('#')[0]});
-    setLoading(btn,false);
-    if(error){ m.textContent=error.message; return; }
-    m.style.color='var(--ok)';
-    m.textContent='If that email has a login, a reset link is on its way. Open it on this device to choose a new password.';
-  };
   document.getElementById('fp_verify').onclick = async (e)=>{
     const btn=e.currentTarget;
     const email=document.getElementById('fp_email').value.trim();
@@ -1747,7 +1763,7 @@ async function renderAdmin(){
     <p class="muted">Off by default, so everyone plays free. When switched on, the database blocks a new challenge or recorded match if any player in it has used up their free matches and isn't ticked “Subscribed” under Manage players (admins are exempt). Declined challenges don't count.</p>
     <h3>Privacy &amp; security switches</h3>
     <label class="inline"><input type="checkbox" id="guestToggle" ${cfg.guest_view_enabled===false?'':'checked'}> Allow “View as Guest” (anyone can see names, countries and ratings without logging in)</label>
-    <label class="inline"><input type="checkbox" id="detailToggle" ${cfg.allow_detail_reset===false?'':'checked'}> Allow “forgot password” by e-mail + age + country (switch off to allow only e-mailed reset links — safer)</label>
+    <label class="inline"><input type="checkbox" id="detailToggle" ${cfg.allow_detail_reset===false?'':'checked'}> Allow “forgot password” by e-mail + age + country (switching this off disables self-service password reset)</label>
     <div class="error" id="cfg_err"></div>
     <button class="btn" id="saveCfg" style="margin-top:10px">Save settings</button>
   </div>
@@ -2095,39 +2111,13 @@ window.deleteGame = async (btn,id)=>{
   adminOpenSections.add('Games'); renderAdmin();
 };
 
-// ---------- password recovery (email link) ----------
-let recovering = /type=recovery/.test(location.hash);
-function renderRecovery(){
-  recovering = true;
-  app.innerHTML = `<div class="card" style="max-width:440px;margin:30px auto"><h2>Choose a new password</h2>
-    <label>New password</label><input id="rc_pw" type="password" autocomplete="new-password">
-    <div class="muted">Min 10 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.</div>
-    <label>Confirm password</label><input id="rc_pw2" type="password" autocomplete="new-password">
-    <div class="error" id="rc_err"></div>
-    <button class="btn" id="rc_go" style="margin-top:12px">Save new password</button></div>`;
-  document.getElementById('rc_go').onclick = async (e)=>{
-    const btn=e.currentTarget, err=document.getElementById('rc_err');
-    const pw=document.getElementById('rc_pw').value, pw2=document.getElementById('rc_pw2').value;
-    err.style.color='var(--warn)';
-    if(!pwOk(pw)){ err.textContent='Password does not meet the requirements.'; return; }
-    if(pw!==pw2){ err.textContent='Passwords do not match.'; return; }
-    setLoading(btn,true,'Saving...');
-    const {error} = await sb.auth.updateUser({password:pw});
-    if(error){ setLoading(btn,false); err.textContent=error.message; return; }
-    recovering=false;
-    try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
-    const {data:{session:s2}} = await sb.auth.getSession();
-    if(s2){ session=s2; await loadMeAndBoot(); } else renderLogin();
-  };
-}
-try{ sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY') renderRecovery(); }); }catch(_){}
 // ---------- idle auto-logout (30 min without any activity) ----------
 (function(){
   const LIMIT = 30*60*1000; let last = Date.now(), tick = null;
   const bump = ()=>{ last = Date.now(); };
   ['click','keydown','touchstart','mousemove','scroll'].forEach(ev=>window.addEventListener(ev,bump,{passive:true}));
   tick = setInterval(async ()=>{
-    if(!session || recovering) return;
+    if(!session) return;
     if(Date.now()-last > LIMIT){
       clearInterval(tick);
       try{ await sb.auth.signOut(); }catch(_){}
@@ -2149,7 +2139,6 @@ try{ sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY') renderRecove
   try{ await loadConfig(); }catch(e){}
   try{ await loadGames(); }catch(e){}
   const {data:{session:s}} = await sb.auth.getSession();
-  if(recovering){ renderRecovery(); return; }
   if(s){ session=s; await loadMeAndBoot(); } else { renderLogin(); }
 })();
 </script>
