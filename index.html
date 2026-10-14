@@ -156,8 +156,8 @@ details.sport .inner{padding:0 12px 12px}
 // ===== STTL2 has its OWN Supabase project (separate logins and data from STTL). =====
 // Paste the Project URL and the anon/public key of the STTL2 project here
 // (Supabase → Project Settings → API). Never paste the service_role key.
-const SUPABASE_URL = "https://YOUR-STTL2-PROJECT-ID.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR-STTL2-ANON-PUBLIC-KEY";
+const SUPABASE_URL = "https://gdvbplbqehrtrgiwwcja.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkdmJwbGJxZWhydHJnaXd3Y2phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMzExOTEsImV4cCI6MjEwNTgwNzE5MX0.w61-EWRvERE2QzXTKMifXp63Pqq5BFgMDKx99k3LPkY";
 const SETUP_NEEDED = /YOUR-STTL2/.test(SUPABASE_URL) || /YOUR-STTL2/.test(SUPABASE_ANON_KEY);
 const sb = SETUP_NEEDED ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // A second, throw-away client used only when an admin adds a player: it
